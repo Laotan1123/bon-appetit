@@ -74,7 +74,7 @@ export default function Hero({ onBookNowClick }: HeroProps) {
 
         {/* Subtle note */}
         <p className="text-brand-beige/80 text-sm mt-6">
-          An exclusive evening of culinary excellence
+          An exclusive evening of culinary excellenceee
         </p>
       </div>
 

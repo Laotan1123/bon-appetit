@@ -17,14 +17,21 @@ jobs:
           node-version: 18
 
       - name: Create .env from secrets
+        env:
+          PAYSTACK_KEY: ${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}
+          SHEET_URL: ${{ secrets.VITE_SHEET_WEBAPP_URL }}
+          SHEET_SECRET: ${{ secrets.VITE_SHEET_SECRET }}
+          EMAILJS_SERVICE: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+          EMAILJS_TEMPLATE: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+          EMAILJS_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
         run: |
           cat > .env <<EOF
-          VITE_PAYSTACK_PUBLIC_KEY=${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}
-          VITE_SHEET_WEBAPP_URL=${{ secrets.VITE_SHEET_WEBAPP_URL }}
-          VITE_SHEET_SECRET=${{ secrets.VITE_SHEET_SECRET }}
-          VITE_EMAILJS_SERVICE_ID=${{ secrets.VITE_EMAILJS_SERVICE_ID }}
-          VITE_EMAILJS_TEMPLATE_ID=${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
-          VITE_EMAILJS_PUBLIC_KEY=${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+          VITE_PAYSTACK_PUBLIC_KEY=${PAYSTACK_KEY:-}
+          VITE_SHEET_WEBAPP_URL=${SHEET_URL:-}
+          VITE_SHEET_SECRET=${SHEET_SECRET:-}
+          VITE_EMAILJS_SERVICE_ID=${EMAILJS_SERVICE:-}
+          VITE_EMAILJS_TEMPLATE_ID=${EMAILJS_TEMPLATE:-}
+          VITE_EMAILJS_PUBLIC_KEY=${EMAILJS_KEY:-}
           EOF
 
       - name: Install dependencies
