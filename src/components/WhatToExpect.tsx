@@ -91,12 +91,12 @@ export default function WhatToExpect() {
         {/* Additional highlights */}
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
           <div className="p-6">
-            <div className="text-3xl font-bold text-brand-gold mb-2">50+</div>
+            <div className="text-3xl font-bold text-brand-gold mb-2">20+</div>
             <div className="text-brand-beige">Gourmet Dishes</div>
           </div>
           <div className="p-6">
             <div className="text-3xl font-bold text-brand-gold mb-2">Premium</div>
-            <div className="text-brand-beige">Wine Selection</div>
+            <div className="text-brand-beige">Drink Selection</div>
           </div>
           <div className="p-6">
             <div className="text-3xl font-bold text-brand-gold mb-2">Live</div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, Check } from 'lucide-react';
+import emailjs from 'emailjs-com';
 
 interface BookingFormProps {
   isVisible: boolean;
@@ -9,6 +10,19 @@ interface BookingFormProps {
 type PaymentMethod = 'paystack' | 'bank_transfer';
 
 export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
+  // Initialize EmailJS with public key (supports VITE_ and REACT_APP_ env names)
+  useEffect(() => {
+    const publicKey =
+      import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+    if (publicKey) {
+      try {
+        emailjs.init(publicKey);
+      } catch (err) {
+        console.warn('EmailJS init failed:', err);
+      }
+    }
+  }, []);
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -87,34 +101,61 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
           throw new Error('Paystack public key not configured (VITE_PAYSTACK_PUBLIC_KEY)');
         }
 
-        // Use plain function references for Paystack callbacks
-        const onPaystackSuccess = async function (response: any) {
-          // keep UI responsive while we save; actual async work happens here
+        // Paystack requires a plain function reference for callback.
+        // Do async work inside using promises.
+        const onPaystackSuccess = function (response: any) {
           setLoading(true);
-          try {
-            await saveBooking('paid', ticketCode, response.reference);
+          saveBooking('paid', ticketCode, response.reference)
+            .then(() => {
+              // Send confirmation email via EmailJS (client-side)
+              const serviceId =
+                import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.REACT_APP_EMAILJS_SERVICE_ID;
+              const templateId =
+                import.meta.env.VITE_EMAILJS_TEMPLATE_ID || import.meta.env.REACT_APP_EMAILJS_TEMPLATE_ID;
 
-            // Trigger the serverless email endpoint (do not expose errors to users)
-            fetch('/api/send-confirmation', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fullName,
-                email,
-                numTickets,
-                amount: totalAmount,
-                paymentReference: response.reference,
-              }),
-            }).catch((err) => {
-              console.error('Error sending confirmation email:', err);
-            });
-          } catch (err) {
-            console.error('Error saving booking after Paystack success:', err);
-            alert('Payment succeeded but saving booking failed. Please contact support.');
-          } finally {
-            setLoading(false);
-          }
-        };
+              const templateParams = {
+                full_name: fullName,
+                num_tickets: String(numTickets),
+                amount: `₦${totalAmount.toLocaleString()}`,
+                event_date: 'Friday, October 31st',
+                event_time: 'Evening (check ticket for entry time)',
+                venue: 'Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi',
+                email: email,
+                ticket_code: ticketCode,
+                payment_reference: response.reference,
+                // include recipient if your template expects a to_email field
+                to_email: email,
+              };
+
+              if (serviceId && templateId) {
+                const publicKey =
+                  import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+
+                // Use publicKey directly on send to avoid relying on init timing
+                emailjs
+                  .send(serviceId, templateId, templateParams, publicKey)
+                  .then((res) => {
+                    console.log('EmailJS: confirmation email queued', res);
+                    // show user-friendly notification
+                    alert('Booking confirmed — a confirmation email was sent to ' + email);
+                  })
+                  .catch((err) => {
+                    console.error('EmailJS send error:', err);
+                    // still show success to user (booking saved) but log the issue
+                    alert('Booking confirmed but we could not send a confirmation email. Please check your inbox or contact support.');
+                  });
+              } else {
+                console.warn('EmailJS service/template not configured in env vars');
+              }
+             })
+             .catch((err) => {
+               console.error('Error saving booking after Paystack success:', err);
+               alert('Payment succeeded but saving booking failed. Please contact support.');
+             })
+             .finally(() => {
+               setLoading(false);
+             });
+         };
 
         const onPaystackClose = function () {
           setLoading(false);
@@ -139,13 +180,59 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
         handler.openIframe();
       } else {
-        // Bank transfer - upload proof
-        let proofUrl = '';
+        // Bank transfer - convert uploaded proof to base64 and save
+        let proofData: ProofData = '';
         if (proofOfPayment) {
-          // In production, upload to cloud storage and get URL
-          proofUrl = `proof_${Date.now()}_${proofOfPayment.name}`;
+          try {
+            proofData = await fileToBase64(proofOfPayment);
+          } catch (err) {
+            console.error('Failed to read proof of payment file:', err);
+            alert('Could not read the uploaded proof of payment. Please try again.');
+            setLoading(false);
+            return;
+          }
         }
-        await saveBooking('pending', ticketCode, proofUrl);
+        await saveBooking('pending', ticketCode, proofData);
+
+        // Send confirmation email for bank transfer as well
+        try {
+          const serviceId =
+            import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.REACT_APP_EMAILJS_SERVICE_ID;
+          const templateId =
+            import.meta.env.VITE_EMAILJS_TEMPLATE_ID || import.meta.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+          const publicKey =
+            import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+
+          const templateParams = {
+            full_name: fullName,
+            num_tickets: String(numTickets),
+            amount: `₦${totalAmount.toLocaleString()}`,
+            event_date: 'Friday, October 31st',
+            event_time: 'Evening (check ticket for entry time)',
+            venue: 'Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi',
+            email: email,
+            ticket_code: ticketCode,
+            payment_reference: typeof proofData === 'string' ? proofData : (proofData as any).name || '',
+            to_email: email, // include if your template expects recipient variable
+          };
+
+          if (serviceId && templateId && publicKey) {
+            emailjs
+              .send(serviceId, templateId, templateParams, publicKey)
+              .then(() => {
+                console.log('EmailJS: bank-transfer confirmation queued');
+                alert('Booking received — a confirmation email was sent to ' + email);
+              })
+              .catch((err) => {
+                console.error('EmailJS send error (bank transfer):', err);
+                alert('Booking received but we could not send a confirmation email. Please check your inbox or contact support.');
+              });
+          } else {
+            console.warn('EmailJS service/template not configured in env vars (bank transfer)');
+          }
+        } catch (err) {
+          console.error('Error sending confirmation email (bank transfer):', err);
+        }
       }
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -154,7 +241,24 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
     }
   };
 
-  const saveBooking = async (paymentStatus: string, ticketCode: string, paymentRef: string) => {
+  const fileToBase64 = (file: File): Promise<{ name: string; mime: string; base64: string }> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onload = () => {
+      const result = reader.result as string; // "data:<mime>;base64,AAAA..."
+      const parts = result.split(',');
+      const base64 = parts[1] || '';
+      const mimeMatch = (parts[0] || '').match(/data:(.*);base64/);
+      const mime = mimeMatch ? mimeMatch[1] : file.type || 'application/octet-stream';
+      resolve({ name: file.name, mime, base64 });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  type ProofData = { name: string; mime: string; base64: string } | string;
+
+  const saveBooking = async (paymentStatus: string, ticketCode: string, paymentRef: ProofData) => {
     try {
       const sheetUrl = import.meta.env.VITE_SHEET_WEBAPP_URL;
       const clientSecret = import.meta.env.VITE_SHEET_SECRET;
@@ -162,7 +266,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
       if (!sheetUrl) throw new Error('VITE_SHEET_WEBAPP_URL not set in .env');
       if (!clientSecret) throw new Error('VITE_SHEET_SECRET not set in .env');
 
-      const payload = {
+      const payload: any = {
         _secret: clientSecret,
         fullName,
         email,
@@ -178,6 +282,12 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         paymentReference: paymentRef,
         ticketCode,
       };
+      // paymentRef may be a string (reference/URL) or an object with file data
+      if (paymentMethod === 'bank_transfer' && paymentRef && typeof paymentRef !== 'string') {
+        payload.proofName = paymentRef.name;
+        payload.proofMime = paymentRef.mime;
+        payload.proofData = paymentRef.base64; // IMPORTANT: no data: prefix
+      }
 
       // Use text/plain to avoid CORS preflight. Apps Script will expose the raw string at e.postData.contents.
       const resp = await fetch(sheetUrl, {
