@@ -17,35 +17,35 @@ export default function Gallery3D() {
   // Optimized food photography images with WebP format for better performance
   const images = useMemo(() => [
     {
-      src: '/bon-appetit/public/images/gallery/IMG_1191.jpg',
+      src: './public/images/gallery/IMG_1191.jpg',
       alt: 'Fine dining plating'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_9441.jpg',
+      src: './public/images/gallery/IMG_9441.jpg',
       alt: 'Wine glasses and ambiance'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_9443.jpg',
+      src: './public/images/gallery/IMG_9443.jpg',
       alt: 'Buffet spread'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_9444.jpg',
+      src: './public/images/gallery/IMG_9444.jpg',
       alt: 'Dessert showcase'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_9445.jpg',
+      src: './public/images/gallery/IMG_9445.jpg',
       alt: 'Restaurant ambiance'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_0246.jpg',
+      src: './public/images/gallery/IMG_0246.jpg',
       alt: 'Gourmet dishes'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_0238.jpg',
+      src: './public/images/gallery/IMG_0238.jpg',
       alt: 'Premium drinks'
     },
     {
-      src: '/bon-appetit/public/images/gallery/IMG_0173.jpg',
+      src: './public/images/gallery/IMG_0173.jpg',
       alt: 'Culinary presentation'
     }
   ], []);
