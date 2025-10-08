@@ -23,33 +23,40 @@ export default function Gallery3D() {
     },
     {
       src: '/bon-appetit/images/gallery/IMG_9441.JPG',
-      alt: 'Wine glasses and ambiance'
+      alt: 'White chocolate whipped ganache, apple compote, jacounde sponge, and tart almond'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_9443.JPG',
-      alt: 'Buffet spread'
+      alt: 'Strawberry tart with coco yam flakes'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_9444.JPG',
-      alt: 'Dessert showcase'
+      alt: 'Pillow Rice scrips with salted caramel'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_9445.JPG',
-      alt: 'Restaurant ambiance'
+      alt: 'Porkinpine choux craquelin, pavlova with diplomat pastry cream'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_0246.JPG',
       alt: 'Gourmet dishes'
     },
     {
-      src: '/bon-appetit/images/gallery/IMG_0238.JPG',
+      src: '/bon-appetit/images/gallery/IMG_0234.JPG',
       alt: 'Premium drinks'
     },
     {
-      src: '/bon-appetit/images/gallery/IMG_0173.JPG',
-      alt: 'Culinary presentation'
+      src: '/bon-appetit/images/gallery/IMG_1181.JPG',
+      alt: 'Mille Feuille'
     }
   ], []);
+
+  // Captions that should render in black text
+  const blackCaptionAlts = useMemo(() => new Set<string>([
+    'White chocolate whipped ganache, apple compote, jacounde sponge, and tart almond',
+    'Pillow Rice scrips with salted caramel',
+    'Mille Feuille'
+  ]), []);
 
   // Device detection for mobile optimizations
   useEffect(() => {
@@ -330,7 +337,9 @@ export default function Gallery3D() {
                   <div className="absolute inset-0 bg-gradient-to-t from-brand-brown/20 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
                   {/* Image caption */}
-                  <div className="absolute bottom-4 left-4 right-4 text-brand-ivory opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ color: blackCaptionAlts.has(image.alt) ? '#000000' : undefined }}
+                  >
                     <p className="text-sm font-medium">{image.alt}</p>
                   </div>
                 </div>
