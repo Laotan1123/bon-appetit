@@ -19,7 +19,7 @@ export default function Gallery3D() {
   const images = useMemo(() => [
     {
       src: '/bon-appetit/images/gallery/IMG_1191.JPG',
-      alt: 'Fine dining plating'
+      alt: 'Saint honore'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_9441.JPG',
@@ -39,11 +39,11 @@ export default function Gallery3D() {
     },
     {
       src: '/bon-appetit/images/gallery/IMG_0246.JPG',
-      alt: 'Gourmet dishes'
+      alt: 'Pistachio praline mirro glaze'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_0234.JPG',
-      alt: 'Premium drinks'
+      alt: 'Chocolate Mousse Feuillettine'
     },
     {
       src: '/bon-appetit/images/gallery/IMG_1181.JPG',
