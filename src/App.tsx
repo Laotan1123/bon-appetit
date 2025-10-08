@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Hero from './components/Hero';
 import WhatToExpect from './components/WhatToExpect';
+import Gallery3D from './components/Gallery3D';
 import BookingForm from './components/BookingForm';
 import Footer from './components/Footer';
 
@@ -11,6 +12,7 @@ function App() {
     <div className="min-h-screen bg-brand-brown">
       <Hero onBookNowClick={() => setShowBookingForm(true)} />
       <WhatToExpect />
+      <Gallery3D />
       <BookingForm isVisible={showBookingForm} onClose={() => setShowBookingForm(false)} />
       <Footer />
     </div>
