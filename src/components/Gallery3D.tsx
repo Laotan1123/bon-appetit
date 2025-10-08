@@ -11,7 +11,6 @@ export default function Gallery3D() {
   const [dragStart, setDragStart] = useState({ x: 0, rotation: 0 });
   const [isVisible, setIsVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTime = useRef<number>(0);
   const throttleDelay = 16; // ~60fps
@@ -56,11 +55,9 @@ export default function Gallery3D() {
   useEffect(() => {
     const checkDevice = () => {
       const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const lowEnd = navigator.hardwareConcurrency <= 4;
       const smallScreen = window.innerWidth <= 768;
       
       setIsMobile(mobile || smallScreen);
-      setIsLowEndDevice(lowEnd);
     };
 
     checkDevice();
