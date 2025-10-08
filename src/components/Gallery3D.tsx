@@ -10,6 +10,8 @@ export default function Gallery3D() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, rotation: 0 });
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
   const lastUpdateTime = useRef<number>(0);
   const throttleDelay = 16; // ~60fps
@@ -50,6 +52,22 @@ export default function Gallery3D() {
     }
   ], []);
 
+  // Device detection for mobile optimizations
+  useEffect(() => {
+    const checkDevice = () => {
+      const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const lowEnd = navigator.hardwareConcurrency <= 4;
+      const smallScreen = window.innerWidth <= 768;
+      
+      setIsMobile(mobile || smallScreen);
+      setIsLowEndDevice(lowEnd);
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
   // Optimized function to update carousel positions with GPU acceleration
   const updateCarouselPositions = useCallback((rotation: number) => {
     if (!isVisible) return; // Skip updates when not visible
@@ -57,7 +75,9 @@ export default function Gallery3D() {
     const items = itemsRef.current.filter(Boolean);
     const totalItems = items.length;
     const angleStep = (Math.PI * 2) / totalItems;
-    const radius = 400;
+    
+    // Mobile optimizations: smaller radius and reduced complexity
+    const radius = isMobile ? 300 : 400;
     const maxDistance = radius + 200;
     
     // Use gsap.set for immediate positioning to reduce lag
@@ -84,6 +104,10 @@ export default function Gallery3D() {
         const angle = (index * angleStep) + rotation;
         const z = Math.cos(angle) * radius - 200;
         const distanceFromViewer = Math.abs(z + 200);
+        
+        // Mobile: keep all images opaque for better performance
+        if (isMobile) return 1.0;
+        
         if (distanceFromViewer < 100) return 1.0;
         if (distanceFromViewer < 300) return 1.0;
         return 0.90;
@@ -95,7 +119,7 @@ export default function Gallery3D() {
         return Math.round(maxDistance - distanceFromViewer);
       }
     });
-  }, [isVisible]);
+  }, [isVisible, isMobile]);
 
   // Initialize carousel positions
   useEffect(() => {
@@ -169,10 +193,10 @@ export default function Gallery3D() {
     e.preventDefault();
     
     const deltaX = e.clientX - dragStart.x;
-    const sensitivity = 0.008; // Reduced sensitivity for smoother movement
+    const sensitivity = isMobile ? 0.005 : 0.008; // Lower sensitivity on mobile
     const newRotation = dragStart.rotation + (deltaX * sensitivity);
     setCurrentRotation(newRotation);
-  }, [isDragging, dragStart]);
+  }, [isDragging, dragStart, isMobile]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -190,17 +214,19 @@ export default function Gallery3D() {
     e.preventDefault();
     
     const deltaX = e.touches[0].clientX - dragStart.x;
-    const sensitivity = 0.008; // Reduced sensitivity for smoother movement
+    const sensitivity = isMobile ? 0.005 : 0.008; // Lower sensitivity on mobile
     const newRotation = dragStart.rotation + (deltaX * sensitivity);
     setCurrentRotation(newRotation);
-  }, [isDragging, dragStart]);
+  }, [isDragging, dragStart, isMobile]);
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  // Optimized hover effects with reduced complexity
+  // Optimized hover effects with reduced complexity (disabled on mobile)
   useEffect(() => {
+    if (isMobile) return; // Skip hover effects on mobile
+    
     const items = itemsRef.current.filter(Boolean);
     
     items.forEach((item) => {
@@ -233,7 +259,7 @@ export default function Gallery3D() {
         item.removeEventListener('mouseleave', handleMouseLeave);
       };
     });
-  }, []);
+  }, [isMobile]);
 
   return (
     <section className="relative py-20 px-4 bg-brand-brown overflow-hidden">
@@ -268,7 +294,10 @@ export default function Gallery3D() {
           <div 
             ref={carouselRef}
             className="relative w-full h-full flex items-center justify-center"
-            style={{ transformStyle: 'preserve-3d' }}
+            style={{ 
+              transformStyle: 'preserve-3d',
+              touchAction: 'pan-y' // Prevent scroll conflicts on mobile
+            }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
