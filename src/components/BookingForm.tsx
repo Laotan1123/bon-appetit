@@ -42,7 +42,17 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);
 
   const ticketPrice = 85000;
-  const totalAmount = ticketPrice * numTickets;
+  
+  // Calculate Paystack fee: 1.5% of amount + ₦100, capped at ₦2,000
+  const calculatePaystackFee = (amount: number): number => {
+    const fee = (amount * 0.015) + 100;
+    return Math.min(fee, 2000);
+  };
+  
+  const baseAmount = ticketPrice * numTickets;
+  // Only apply processing fee for Paystack payments
+  const paystackFee = paymentMethod === 'paystack' ? calculatePaystackFee(baseAmount) : 0;
+  const totalAmount = baseAmount + paystackFee;
 
   const updateGuestNames = (count: number) => {
     const newGuestNames = Array(count).fill('').map((_, i) => guestNames[i] || '');
@@ -52,6 +62,8 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const handleNumTicketsChange = (value: number) => {
     setNumTickets(value);
     updateGuestNames(value);
+    // Fee will be recalculated automatically when numTickets changes
+    // since baseAmount and paystackFee are derived from numTickets
   };
 
   // Generate unique ticket code
@@ -164,14 +176,16 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         const handler = (window as any).PaystackPop.setup({
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
           email: email,
-          amount: totalAmount * 100, // amount in kobo
+          amount: totalAmount * 100, // amount in kobo (includes processing fee)
           currency: 'NGN',
           ref: ref,
           metadata: {
             custom_fields: [
               { display_name: "Full Name", variable_name: "full_name", value: fullName },
               { display_name: "Phone", variable_name: "phone", value: phone },
-              { display_name: "Number of Tickets", variable_name: "num_tickets", value: numTickets }
+              { display_name: "Number of Tickets", variable_name: "num_tickets", value: numTickets },
+              { display_name: "Base Amount", variable_name: "base_amount", value: baseAmount },
+              { display_name: "Processing Fee", variable_name: "processing_fee", value: paystackFee }
             ]
           },
           callback: onPaystackSuccess,
@@ -281,6 +295,10 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         paymentStatus,
         paymentReference: paymentRef,
         ticketCode,
+        baseAmount,
+        processingFee: paystackFee,
+        totalAmount,
+        amountPaid: totalAmount, // This will be baseAmount + fee for Paystack or just baseAmount for bank transfer
       };
       // paymentRef may be a string (reference/URL) or an object with file data
       if (paymentMethod === 'bank_transfer' && paymentRef && typeof paymentRef !== 'string') {
@@ -627,8 +645,8 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                       <span className="font-semibold text-brand-ivory">Thabolwethu Dube</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-brand-beige/30">
-                      <span>Amount:</span>
-                      <span className="font-bold text-brand-gold text-xl">₦{totalAmount.toLocaleString()}</span>
+                      <span>Total to Pay:</span>
+                      <span className="font-bold text-brand-gold text-xl">₦{baseAmount.toLocaleString()}</span>
                     </div>
                   </div>
 
@@ -651,13 +669,27 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                 <h3 className="text-brand-ivory font-semibold mb-4">Order Summary</h3>
                 <div className="space-y-2 text-brand-beige">
                   <div className="flex justify-between">
-                    <span>Tickets ({numTickets})</span>
-                    <span>₦{(numTickets * ticketPrice).toLocaleString()}</span>
+                    <span>Ticket Price ({numTickets})</span>
+                    <span>₦{baseAmount.toLocaleString()}</span>
                   </div>
+                  
+                  {paymentMethod === 'paystack' && (
+                    <div className="flex justify-between">
+                      <span>Processing Fee (Paystack)</span>
+                      <span>₦{paystackFee.toLocaleString()}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between pt-3 border-t border-brand-gold/40 text-brand-ivory font-bold text-lg">
                     <span>Total</span>
                     <span className="text-brand-gold">₦{totalAmount.toLocaleString()}</span>
                   </div>
+                  
+                  {paymentMethod === 'paystack' && (
+                    <div className="text-xs text-brand-beige/70 text-center mt-2">
+                      Includes Paystack processing fee.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
