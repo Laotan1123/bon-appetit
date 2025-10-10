@@ -675,7 +675,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                   
                   {paymentMethod === 'paystack' && (
                     <div className="flex justify-between">
-                      <span>Processing Fee (Paystack)</span>
+                      <span>Processing Fee</span>
                       <span>₦{paystackFee.toLocaleString()}</span>
                     </div>
                   )}
