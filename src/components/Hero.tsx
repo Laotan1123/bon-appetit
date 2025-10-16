@@ -58,7 +58,7 @@ export default function Hero({ onBookNowClick }: HeroProps) {
 
           {/* Price */}
           <div className="border-t border-brand-beige/30 pt-6">
-            <p className="text-4xl md:text-5xl font-bold text-brand-gold mb-2">₦85,000</p>
+            <p className="text-4xl md:text-5xl font-bold text-brand-gold mb-2">From ₦85,000</p>
             <p className="text-brand-beige text-sm">per ticket</p>
           </div>
         </div>

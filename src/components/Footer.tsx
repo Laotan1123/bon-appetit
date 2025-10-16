@@ -65,7 +65,7 @@ export default function Footer() {
 
         {/* Venue + Date quick ref */}
         <div className="border-t border-brand-beige/30 pt-6 mb-8 text-sm text-brand-beige">
-          Friday, October 31st • Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi • ₦85,000 per ticket
+          Friday, October 31st • Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi • From ₦85,000 per ticket
         </div>
 
         {/* Copyright */}
