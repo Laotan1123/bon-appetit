@@ -41,18 +41,12 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('paystack');
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);
 
-  const ticketPrice = 85000;
-  
-  // Calculate Paystack fee: 1.5% of amount + ₦100, capped at ₦2,000
-  const calculatePaystackFee = (amount: number): number => {
-    const fee = (amount * 0.015) + 100;
-    return Math.min(fee, 2000);
-  };
+  const ticketPrice = 100000;
   
   const baseAmount = ticketPrice * numTickets;
-  // Only apply processing fee for Paystack payments
-  const paystackFee = paymentMethod === 'paystack' ? calculatePaystackFee(baseAmount) : 0;
-  const totalAmount = baseAmount + paystackFee;
+  // No processing fee for Regular tickets - users pay exactly ₦100,000 per ticket
+  const paystackFee = 0;
+  const totalAmount = baseAmount;
 
   const updateGuestNames = (count: number) => {
     const newGuestNames = Array(count).fill('').map((_, i) => guestNames[i] || '');
@@ -295,6 +289,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         paymentStatus,
         paymentReference: paymentRef,
         ticketCode,
+        ticketType: 'Regular Ticket',
         baseAmount,
         processingFee: paystackFee,
         totalAmount,
@@ -433,6 +428,16 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
           </button>
         </div>
 
+        {/* Sold Out Notice */}
+        <div className="px-6 py-4 bg-gray-900/30 border-b border-gray-500/30">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+            <p className="text-gray-300 text-sm">
+              Early Bird tickets are now sold out. Regular tickets are currently available for ₦100,000.
+            </p>
+          </div>
+        </div>
+
         {/* Form */}
         <form
           onSubmit={handleSubmit}
@@ -491,16 +496,17 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
               {/* Number of Tickets */}
               <div>
-                <label className="block text-brand-ivory mb-2 font-medium">Number of Tickets *</label>
+                <label className="block text-brand-ivory mb-2 font-medium">Number of Regular Tickets *</label>
                 <select
                   value={numTickets}
                   onChange={(e) => handleNumTicketsChange(Number(e.target.value))}
                   className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
-                    <option key={num} value={num}>{num} Ticket{num > 1 ? 's' : ''} - ₦{(num * ticketPrice).toLocaleString()}</option>
+                    <option key={num} value={num}>{num} Regular Ticket{num > 1 ? 's' : ''} - ₦{(num * ticketPrice).toLocaleString()}</option>
                   ))}
                 </select>
+                <p className="mt-2 text-sm text-brand-beige/80">Early Bird tickets are sold out. Regular tickets are now available.</p>
               </div>
 
               {/* Guest Names */}
@@ -669,27 +675,18 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                 <h3 className="text-brand-ivory font-semibold mb-4">Order Summary</h3>
                 <div className="space-y-2 text-brand-beige">
                   <div className="flex justify-between">
-                    <span>Ticket Price ({numTickets})</span>
+                    <span>Regular Tickets ({numTickets})</span>
                     <span>₦{baseAmount.toLocaleString()}</span>
                   </div>
-                  
-                  {paymentMethod === 'paystack' && (
-                    <div className="flex justify-between">
-                      <span>Processing Fee</span>
-                      <span>₦{paystackFee.toLocaleString()}</span>
-                    </div>
-                  )}
                   
                   <div className="flex justify-between pt-3 border-t border-brand-gold/40 text-brand-ivory font-bold text-lg">
                     <span>Total</span>
                     <span className="text-brand-gold">₦{totalAmount.toLocaleString()}</span>
                   </div>
                   
-                  {paymentMethod === 'paystack' && (
-                    <div className="text-xs text-brand-beige/70 text-center mt-2">
-                      Includes Paystack processing fee.
-                    </div>
-                  )}
+                  <div className="text-xs text-brand-beige/70 text-center mt-2">
+                    No processing fees - pay exactly ₦{ticketPrice.toLocaleString()} per ticket.
+                  </div>
                 </div>
               </div>
             </div>

@@ -21,18 +21,19 @@ export default function TicketPricing({ variant = 'full', className = '' }: Tick
       price: 85000,
       description: 'Limited slots available',
       icon: ShoppingCart,
-      tag: 'Available Online',
-      tagColor: 'bg-green-500/20 text-green-400 border-green-500/30',
-      isPopular: true
+      tag: 'Sold Out',
+      tagColor: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+      isPopular: false,
+      isSoldOut: true
     },
     {
       name: 'Regular Ticket',
       price: 100000,
       description: 'Standard price for general purchase',
       icon: ShoppingCart,
-      tag: 'Available Online',
+      tag: 'Now Selling',
       tagColor: 'bg-green-500/20 text-green-400 border-green-500/30',
-      isPopular: false
+      isPopular: true
     },
     {
       name: 'Event Day Ticket',
@@ -77,11 +78,13 @@ export default function TicketPricing({ variant = 'full', className = '' }: Tick
               key={ticket.name}
               className={`
                 relative p-6 rounded-2xl border transition-all duration-300 ease-out
-                ${ticket.isPopular 
-                  ? 'border-brand-gold bg-brand-gold/10 shadow-lg shadow-brand-gold/20' 
-                  : 'border-brand-beige/30 bg-black/20 hover:border-brand-gold/50 hover:bg-black/30'
+                ${ticket.isSoldOut 
+                  ? 'border-gray-500/30 bg-gray-900/20 opacity-60 cursor-not-allowed'
+                  : ticket.isPopular 
+                    ? 'border-brand-gold bg-brand-gold/10 shadow-lg shadow-brand-gold/20' 
+                    : 'border-brand-beige/30 bg-black/20 hover:border-brand-gold/50 hover:bg-black/30'
                 }
-                hover:shadow-xl hover:shadow-brand-gold/10 hover:-translate-y-1
+                ${!ticket.isSoldOut && 'hover:shadow-xl hover:shadow-brand-gold/10 hover:-translate-y-1'}
                 ${isVisible 
                   ? 'opacity-100 translate-y-0' 
                   : 'opacity-0 translate-y-4'
@@ -101,24 +104,34 @@ export default function TicketPricing({ variant = 'full', className = '' }: Tick
               )}
 
               {/* Icon */}
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-brand-gold/20 mb-4 mx-auto">
-                <IconComponent className="w-6 h-6 text-brand-gold" />
+              <div className={`flex items-center justify-center w-12 h-12 rounded-full mb-4 mx-auto ${
+                ticket.isSoldOut ? 'bg-gray-500/20' : 'bg-brand-gold/20'
+              }`}>
+                <IconComponent className={`w-6 h-6 ${
+                  ticket.isSoldOut ? 'text-gray-500' : 'text-brand-gold'
+                }`} />
               </div>
 
               {/* Ticket Name */}
-              <h3 className="text-xl font-serif text-brand-ivory text-center mb-2">
+              <h3 className={`text-xl font-serif text-center mb-2 ${
+                ticket.isSoldOut ? 'text-gray-400' : 'text-brand-ivory'
+              }`}>
                 {ticket.name}
               </h3>
 
               {/* Price */}
               <div className="text-center mb-4">
-                <span className="text-3xl font-bold text-brand-gold">
+                <span className={`text-3xl font-bold ${
+                  ticket.isSoldOut ? 'text-gray-500' : 'text-brand-gold'
+                }`}>
                   ₦{ticket.price.toLocaleString()}
                 </span>
               </div>
 
               {/* Description */}
-              <p className="text-brand-beige/80 text-center text-sm mb-4 leading-relaxed">
+              <p className={`text-center text-sm mb-4 leading-relaxed ${
+                ticket.isSoldOut ? 'text-gray-500/60' : 'text-brand-beige/80'
+              }`}>
                 {ticket.description}
               </p>
 
