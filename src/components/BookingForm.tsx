@@ -400,6 +400,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
       onClick={handleOverlayClick}
+      data-booking-form
     >
       {/* Floating close button (top-right) */}
       <button

@@ -4,9 +4,10 @@ import { Ticket, ShoppingCart, MapPin } from 'lucide-react';
 interface TicketPricingProps {
   variant?: 'full' | 'compact';
   className?: string;
+  onRegularTicketClick?: () => void;
 }
 
-export default function TicketPricing({ variant = 'full', className = '' }: TicketPricingProps) {
+export default function TicketPricing({ variant = 'full', className = '', onRegularTicketClick }: TicketPricingProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -73,18 +74,22 @@ export default function TicketPricing({ variant = 'full', className = '' }: Tick
       <div className={containerClasses}>
         {ticketCategories.map((ticket, index) => {
           const IconComponent = ticket.icon;
+          const isRegularTicket = ticket.name === 'Regular Ticket';
+          
           return (
             <div
               key={ticket.name}
+              onClick={isRegularTicket && onRegularTicketClick ? onRegularTicketClick : undefined}
               className={`
                 relative p-6 rounded-2xl border transition-all duration-300 ease-out
                 ${ticket.isSoldOut 
                   ? 'border-gray-500/30 bg-gray-900/20 opacity-60 cursor-not-allowed'
                   : ticket.isPopular 
-                    ? 'border-brand-gold bg-brand-gold/10 shadow-lg shadow-brand-gold/20' 
+                    ? 'border-brand-gold bg-brand-gold/10 shadow-lg shadow-brand-gold/20 cursor-pointer' 
                     : 'border-brand-beige/30 bg-black/20 hover:border-brand-gold/50 hover:bg-black/30'
                 }
                 ${!ticket.isSoldOut && 'hover:shadow-xl hover:shadow-brand-gold/10 hover:-translate-y-1'}
+                ${isRegularTicket && 'hover:ring-2 hover:ring-brand-gold/30 hover:ring-opacity-50'}
                 ${isVisible 
                   ? 'opacity-100 translate-y-0' 
                   : 'opacity-0 translate-y-4'
