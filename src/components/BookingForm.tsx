@@ -44,9 +44,10 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const ticketPrice = 100000;
   
   const baseAmount = ticketPrice * numTickets;
-  // No processing fee for Regular tickets - users pay exactly ₦100,000 per ticket
-  const paystackFee = 0;
-  const totalAmount = baseAmount;
+  // Paystack processing fee: 1.5% of amount + ₦100, capped at ₦2,000
+  const computedPaystackFee = Math.min(Math.round(baseAmount * 0.015) + 100, 2000);
+  const paystackFee = paymentMethod === 'paystack' ? computedPaystackFee : 0;
+  const totalAmount = baseAmount + paystackFee;
 
   const updateGuestNames = (count: number) => {
     const newGuestNames = Array(count).fill('').map((_, i) => guestNames[i] || '');
@@ -200,7 +201,19 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
             return;
           }
         }
-        await saveBooking('pending', ticketCode, proofData);
+        try {
+          alert('Uploading your transfer proof…');
+          await saveBooking('pending', ticketCode, proofData);
+          alert('Booking received — pending payment confirmation.');
+        } catch (err: any) {
+          console.error('Bank transfer submission failed:', err);
+          alert(
+            `We could not submit your bank transfer booking. Please try again.\n\nDetails: ${
+              err?.message || 'Unknown error'
+            }`
+          );
+          throw err;
+        }
 
         // Send confirmation email for bank transfer as well
         try {
@@ -290,10 +303,11 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         paymentReference: paymentRef,
         ticketCode,
         ticketType: 'Regular Ticket',
+        ticketPrice,
         baseAmount,
         processingFee: paystackFee,
         totalAmount,
-        amountPaid: totalAmount, // This will be baseAmount + fee for Paystack or just baseAmount for bank transfer
+        amountPaid: paymentMethod === 'paystack' ? totalAmount : baseAmount,
       };
       // paymentRef may be a string (reference/URL) or an object with file data
       if (paymentMethod === 'bank_transfer' && paymentRef && typeof paymentRef !== 'string') {
@@ -679,15 +693,27 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                     <span>Regular Tickets ({numTickets})</span>
                     <span>₦{baseAmount.toLocaleString()}</span>
                   </div>
+                  {paymentMethod === 'paystack' && (
+                    <div className="flex justify-between">
+                      <span>Processing Fee (Paystack)</span>
+                      <span>₦{paystackFee.toLocaleString()}</span>
+                    </div>
+                  )}
                   
                   <div className="flex justify-between pt-3 border-t border-brand-gold/40 text-brand-ivory font-bold text-lg">
                     <span>Total</span>
                     <span className="text-brand-gold">₦{totalAmount.toLocaleString()}</span>
                   </div>
                   
-                  <div className="text-xs text-brand-beige/70 text-center mt-2">
-                    No processing fees - pay exactly ₦{ticketPrice.toLocaleString()} per ticket.
-                  </div>
+                  {paymentMethod === 'paystack' ? (
+                    <div className="text-xs text-brand-beige/70 text-center mt-2">
+                      Ticket Price: ₦{baseAmount.toLocaleString()} • Fee: ₦{paystackFee.toLocaleString()} • Total: ₦{totalAmount.toLocaleString()}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-brand-beige/70 text-center mt-2">
+                      You pay exactly ₦{ticketPrice.toLocaleString()} per ticket by bank transfer.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
