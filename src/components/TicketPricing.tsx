@@ -41,7 +41,7 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
       price: 150000,
       description: 'Available only at the event venue',
       icon: MapPin,
-      tag: 'Venue Only',
+      tag: 'At the Venue Only',
       tagColor: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
       isPopular: false
     }
