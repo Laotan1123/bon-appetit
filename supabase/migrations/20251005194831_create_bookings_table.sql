@@ -1,5 +1,5 @@
 /*
-  # Create Bookings Table for Bon Appétit Event
+  # Create Bookings Table for Pastry & Grills Event
 
   1. New Tables
     - `bookings`

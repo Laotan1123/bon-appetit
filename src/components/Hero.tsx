@@ -6,81 +6,60 @@ interface HeroProps {
 
 export default function Hero({ onBookNowClick }: HeroProps) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background with overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-brownDark via-brand-brown to-brand-brownDark">
-        <div className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}
-        />
-      </div>
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pattern-bg bg-brand-maroonDark">
+      <div className="absolute inset-0 bg-brand-maroon/80 mix-blend-multiply" />
 
-      {/* Content */}
-      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-        {/* Decorative element */}
-        <div className="flex justify-center mb-6">
-          <Sparkles className="w-8 h-8 text-brand-gold" />
-        </div>
+      <div className="relative z-10 px-4 w-full max-w-5xl">
+        <div className="framed-card px-8 py-10 md:px-10 md:py-12 text-center">
+          <div className="flex justify-center mb-4">
+            <Sparkles className="w-10 h-10 text-brand-cream" />
+          </div>
 
-        {/* Main Title */}
-        <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl text-brand-ivory mb-4 tracking-wide">
-          Bon Appétit
-        </h1>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl text-brand-cream font-serif uppercase tracking-wide mb-2">
+            Pastries &amp; Grills
+          </h1>
+          <p className="text-brand-cream/80 text-lg md:text-xl mb-8">
+            Brought to you by Chef Thabo &amp; Chef Susshi with the Godaif Village
+          </p>
 
-        <div className="w-32 h-px bg-gradient-to-r from-transparent via-brand-beige to-transparent mx-auto mb-4"></div>
-
-        <p className="text-xl md:text-2xl text-brand-beige font-light tracking-widest mb-8">
-          A FINE DINING BUFFET
-        </p>
-
-        {/* Event Details Card */}
-        <div className="bg-white/5 backdrop-blur-sm border border-brand-beige/30 rounded-lg p-8 md:p-10 mb-8 max-w-2xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="flex flex-col items-center text-brand-ivory">
-              <Calendar className="w-6 h-6 text-brand-gold mb-2" />
-              <p className="text-sm text-brand-beige/80 mb-1">DATE</p>
-              <p className="font-medium">Friday, October 31st</p>
+            <div className="bg-brand-cream/10 rounded-2xl p-4 border border-brand-cream/20">
+              <Calendar className="w-6 h-6 text-brand-cream mx-auto mb-2" />
+              <p className="text-sm text-brand-cream/80">Saturday</p>
+              <p className="text-lg font-semibold text-brand-cream">November 29th</p>
             </div>
-
-            <div className="flex flex-col items-center text-brand-ivory">
-              <Clock className="w-6 h-6 text-brand-gold mb-2" />
-              <p className="text-sm text-brand-beige/80 mb-1">TIME</p>
-              <p className="font-medium">5:00PM - 12:00AM</p>
+            <div className="bg-brand-cream/10 rounded-2xl p-4 border border-brand-cream/20">
+              <Clock className="w-6 h-6 text-brand-cream mx-auto mb-2" />
+              <p className="text-sm text-brand-cream/80">Time</p>
+              <p className="text-lg font-semibold text-brand-cream">5:00PM - 12:00AM</p>
             </div>
-
-            <div className="flex flex-col items-center text-brand-ivory">
-              <MapPin className="w-6 h-6 text-brand-gold mb-2" />
-              <p className="text-sm text-brand-beige/80 mb-1">VENUE</p>
-              <p className="font-medium text-center">Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi</p>
+            <div className="bg-brand-cream/10 rounded-2xl p-4 border border-brand-cream/20">
+              <MapPin className="w-6 h-6 text-brand-cream mx-auto mb-2" />
+              <p className="text-sm text-brand-cream/80">Venue</p>
+              <p className="text-lg font-semibold text-brand-cream">Godaif Village, Ikoyi</p>
             </div>
           </div>
 
-          {/* Price */}
-          <div className="border-t border-brand-beige/30 pt-6">
-            <p className="text-4xl md:text-5xl font-bold text-brand-gold mb-2">₦100,000</p>
-            <p className="text-brand-beige text-sm">Regular tickets now available</p>
-            <p className="text-gray-400 text-xs mt-1">Early Bird tickets sold out</p>
+          <div className="bg-brand-cream text-brand-maroon rounded-2xl px-6 py-4 inline-flex items-center gap-3 text-lg font-semibold uppercase tracking-wide mb-6">
+            <span>Paystack: NGN 65,000</span>
+            <span className="w-1 h-1 rounded-full bg-brand-maroon" />
+            <span>Transfer: NGN 60,000</span>
           </div>
+
+          <p className="text-brand-cream/80 max-w-3xl mx-auto text-base md:text-lg mb-8">
+            An evening where art and food merge seamlessly ? Southern African style BBQ and food experience with French pastries and desserts to delight your palate.
+          </p>
+
+          <button
+            onClick={onBookNowClick}
+            className="inline-flex items-center justify-center px-10 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-full uppercase tracking-wide shadow-lg shadow-black/20 hover:translate-y-[-2px] transition-transform"
+          >
+            RSVP / Book Tickets
+          </button>
         </div>
-
-        {/* CTA Button */}
-        <button
-          onClick={onBookNowClick}
-          className="group relative inline-flex items-center justify-center px-12 py-4 text-lg font-semibold text-brand-brown bg-brand-gold rounded-full overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-brand-gold/30"
-        >
-          <span className="relative z-10">BOOK YOUR TICKETS</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-beige to-brand-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-        </button>
-
-        {/* Subtle note */}
-        <p className="text-brand-beige/80 text-sm mt-6">
-          An exclusive evening of culinary excellence
-        </p>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-brand-brownDark to-transparent"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
     </div>
   );
 }

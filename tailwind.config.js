@@ -5,16 +5,16 @@ export default {
     extend: {
       colors: {
         brand: {
-          brown: '#7A5B46',      // warm earthy brown (background)
-          brownDark: '#644836',  // darker shade for gradients
-          ivory: '#F5EFE6',      // off-white text
-          beige: '#D4C2A6',      // muted beige accent
-          gold: '#B8945E'        // muted gold accent
+          maroon: '#A44343',
+          maroonDark: '#8B3737',
+          cream: '#F8F2EA',
+          blush: '#E8C7BC',
+          accent: '#F4B860'
         }
       },
       fontFamily: {
-        serif: ['"Cormorant Garamond"', 'serif'],
-        sans: ['"Manrope"', 'ui-sans-serif', 'system-ui', 'sans-serif']
+        serif: ['"DM Serif Display"', 'serif'],
+        sans: ['"Work Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif']
       }
     },
   },

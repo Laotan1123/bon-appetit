@@ -17,8 +17,13 @@ Deno.serve(async (req: Request) => {
   try {
     const { bookingId, email, fullName, ticketCode, numTickets, paymentStatus } = await req.json();
 
+    const EVENT_NAME = 'Pastry & Grills';
+    const EVENT_DATE = 'Saturday, November 29th';
+    const EVENT_TIME = '5:00 PM - 12:00 AM';
+    const EVENT_VENUE = 'Godaif Village, Casa Asmarina, Turnbull Road, Ikoyi, Lagos';
+
     // Email content
-    const subject = "Booking Confirmation - Bon Appétit";
+    const subject = `Booking Confirmation - ${EVENT_NAME}`;
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -36,8 +41,8 @@ Deno.serve(async (req: Request) => {
       <body>
         <div class="container">
           <div class="header">
-            <h1 style="margin: 0; font-size: 36px;">Bon Appétit</h1>
-            <p style="margin: 10px 0 0 0; font-size: 18px; letter-spacing: 2px;">A FINE DINING BUFFET</p>
+            <h1 style="margin: 0; font-size: 36px;">${EVENT_NAME}</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px; letter-spacing: 2px;">Southern African BBQ meets French pastries</p>
           </div>
           <div class="content">
             <h2>Dear ${fullName},</h2>
@@ -51,10 +56,10 @@ Deno.serve(async (req: Request) => {
             
             <div class="details">
               <h3>Event Details</h3>
-              <p><strong>Event:</strong> Bon Appétit - A Fine Dining Buffet</p>
-              <p><strong>Date:</strong> December 20, 2025</p>
-              <p><strong>Time:</strong> 5:00 PM - 12:00 AM</p>
-              <p><strong>Venue:</strong> The Grand Pavilion</p>
+              <p><strong>Event:</strong> ${EVENT_NAME}</p>
+              <p><strong>Date:</strong> ${EVENT_DATE}</p>
+              <p><strong>Time:</strong> ${EVENT_TIME}</p>
+              <p><strong>Venue:</strong> ${EVENT_VENUE}</p>
               <p><strong>Number of Tickets:</strong> ${numTickets}</p>
             </div>
             
@@ -64,25 +69,19 @@ Deno.serve(async (req: Request) => {
             </div>
             ` : ''}
             
-            <h3>What to Bring</h3>
-            <ul>
-              <li>This email or your ticket code</li>
-              <li>Valid ID</li>
-              <li>Your best formal attire</li>
-            </ul>
-            
             <h3>Schedule</h3>
             <ul>
-              <li><strong>5:00 PM - 6:00 PM:</strong> Red Carpet Reception</li>
-              <li><strong>6:30 PM - 10:00 PM:</strong> Fine Dining Buffet</li>
-              <li><strong>10:00 PM - 12:00 AM:</strong> After Party</li>
+              <li><strong>5:00 PM - 6:30 PM:</strong> Art, champagne and appetizers</li>
+              <li><strong>6:30 PM - 7:30 PM:</strong> Main dish (grills and sides, Southern African style)</li>
+              <li><strong>7:30 PM - 8:30 PM:</strong> Pastries</li>
+              <li><strong>8:30 PM - 12:00 AM:</strong> After party and live performance</li>
             </ul>
             
-            <p style="margin-top: 30px;">We look forward to hosting you at this exclusive event!</p>
-            <p>For any questions, please contact us at events@bonappetit.com</p>
+            <p style="margin-top: 30px;">Guests are required to be on time so service runs smoothly.</p>
+            <p>For any questions, please contact us at bythabo@gmail.com or WhatsApp +234 916 276 8788.</p>
           </div>
           <div class="footer">
-            <p>© 2025 Bon Appétit. All rights reserved.</p>
+            <p>(c) 2025 ${EVENT_NAME}. All rights reserved.</p>
             <p>This is an automated email. Please do not reply.</p>
           </div>
         </div>
@@ -90,26 +89,8 @@ Deno.serve(async (req: Request) => {
       </html>
     `;
 
-    // Log the email (in production, integrate with email service like SendGrid, Resend, etc.)
     console.log('Sending confirmation email to:', email);
     console.log('Subject:', subject);
-    
-    // Note: To actually send emails, integrate with an email service provider
-    // For example, using Resend:
-    // const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    // await fetch('https://api.resend.com/emails', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${RESEND_API_KEY}`,
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({
-    //     from: 'Bon Appétit <noreply@bonappetit.com>',
-    //     to: email,
-    //     subject: subject,
-    //     html: htmlContent,
-    //   }),
-    // });
 
     return new Response(
       JSON.stringify({ 

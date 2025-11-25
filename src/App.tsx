@@ -22,16 +22,16 @@ function App() {
       // Find the booking form and add highlight effect
       const bookingForm = document.querySelector('[data-booking-form]');
       if (bookingForm) {
-        bookingForm.classList.add('animate-pulse', 'ring-2', 'ring-brand-gold', 'ring-opacity-50');
+        bookingForm.classList.add('animate-pulse', 'ring-2', 'ring-brand-cream', 'ring-opacity-50');
         setTimeout(() => {
-          bookingForm.classList.remove('animate-pulse', 'ring-2', 'ring-brand-gold', 'ring-opacity-50');
+          bookingForm.classList.remove('animate-pulse', 'ring-2', 'ring-brand-cream', 'ring-opacity-50');
         }, 2000);
       }
     }, 100);
   };
 
   return (
-    <div className="min-h-screen bg-brand-brown">
+    <div className="min-h-screen bg-brand-maroon">
       <Hero onBookNowClick={() => setShowBookingForm(true)} />
       <WhatToExpect />
       <Gallery3D />

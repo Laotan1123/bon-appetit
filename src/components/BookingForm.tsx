@@ -9,6 +9,13 @@ interface BookingFormProps {
 
 type PaymentMethod = 'paystack' | 'bank_transfer';
 
+const PAYSTACK_PRICE = 65000;
+const BANK_TRANSFER_PRICE = 60000;
+const EVENT_NAME = 'Pastry & Grills';
+const EVENT_DATE = 'Saturday, November 29th';
+const EVENT_TIME = '5:00PM - 12:00AM';
+const EVENT_VENUE = 'Godaif Village, Casa Asmarina, Turnbull Road, Ikoyi, Lagos';
+
 export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   // Initialize EmailJS with public key (supports VITE_ and REACT_APP_ env names)
   useEffect(() => {
@@ -41,12 +48,9 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('paystack');
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);
 
-  const ticketPrice = 100000;
-  
+  const ticketPrice = paymentMethod === 'paystack' ? PAYSTACK_PRICE : BANK_TRANSFER_PRICE;
   const baseAmount = ticketPrice * numTickets;
-  // Paystack processing fee: 1.5% of amount + ₦100, capped at ₦2,000
-  const computedPaystackFee = Math.min(Math.round(baseAmount * 0.015) + 100, 2000);
-  const paystackFee = paymentMethod === 'paystack' ? computedPaystackFee : 0;
+  const paystackFee = 0; // price already accounts for card processing
   const totalAmount = baseAmount + paystackFee;
 
   const updateGuestNames = (count: number) => {
@@ -57,8 +61,6 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const handleNumTicketsChange = (value: number) => {
     setNumTickets(value);
     updateGuestNames(value);
-    // Fee will be recalculated automatically when numTickets changes
-    // since baseAmount and paystackFee are derived from numTickets
   };
 
   // Generate unique ticket code
@@ -101,20 +103,16 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         // Ensure Paystack script is loaded
         await loadPaystack();
 
-        // Build a stable reference (you can adapt)
         const ref = 'BA' + Date.now() + Math.floor(Math.random() * 1000000);
 
         if (!import.meta.env.VITE_PAYSTACK_PUBLIC_KEY) {
           throw new Error('Paystack public key not configured (VITE_PAYSTACK_PUBLIC_KEY)');
         }
 
-        // Paystack requires a plain function reference for callback.
-        // Do async work inside using promises.
         const onPaystackSuccess = function (response: any) {
           setLoading(true);
           saveBooking('paid', ticketCode, response.reference)
             .then(() => {
-              // Send confirmation email via EmailJS (client-side)
               const serviceId =
                 import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.REACT_APP_EMAILJS_SERVICE_ID;
               const templateId =
@@ -122,15 +120,15 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
               const templateParams = {
                 full_name: fullName,
+                event_name: EVENT_NAME,
                 num_tickets: String(numTickets),
-                amount: `₦${totalAmount.toLocaleString()}`,
-                event_date: 'Friday, October 31st',
-                event_time: 'Evening (check ticket for entry time)',
-                venue: 'Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi',
+                amount: `NGN ${totalAmount.toLocaleString()}`,
+                event_date: EVENT_DATE,
+                event_time: EVENT_TIME,
+                venue: EVENT_VENUE,
                 email: email,
                 ticket_code: ticketCode,
                 payment_reference: response.reference,
-                // include recipient if your template expects a to_email field
                 to_email: email,
               };
 
@@ -138,17 +136,14 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                 const publicKey =
                   import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 
-                // Use publicKey directly on send to avoid relying on init timing
                 emailjs
                   .send(serviceId, templateId, templateParams, publicKey)
                   .then((res) => {
                     console.log('EmailJS: confirmation email queued', res);
-                    // show user-friendly notification
-                    alert('Booking confirmed — a confirmation email was sent to ' + email);
+                    alert('Booking confirmed - a confirmation email was sent to ' + email);
                   })
                   .catch((err) => {
                     console.error('EmailJS send error:', err);
-                    // still show success to user (booking saved) but log the issue
                     alert('Booking confirmed but we could not send a confirmation email. Please check your inbox or contact support.');
                   });
               } else {
@@ -171,16 +166,16 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         const handler = (window as any).PaystackPop.setup({
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
           email: email,
-          amount: totalAmount * 100, // amount in kobo (includes processing fee)
+          amount: totalAmount * 100, // amount in kobo (price already includes card processing)
           currency: 'NGN',
           ref: ref,
           metadata: {
             custom_fields: [
-              { display_name: "Full Name", variable_name: "full_name", value: fullName },
-              { display_name: "Phone", variable_name: "phone", value: phone },
-              { display_name: "Number of Tickets", variable_name: "num_tickets", value: numTickets },
-              { display_name: "Base Amount", variable_name: "base_amount", value: baseAmount },
-              { display_name: "Processing Fee", variable_name: "processing_fee", value: paystackFee }
+              { display_name: 'Full Name', variable_name: 'full_name', value: fullName },
+              { display_name: 'Phone', variable_name: 'phone', value: phone },
+              { display_name: 'Number of Tickets', variable_name: 'num_tickets', value: numTickets },
+              { display_name: 'Ticket Price', variable_name: 'ticket_price', value: ticketPrice },
+              { display_name: 'Total Amount', variable_name: 'total_amount', value: totalAmount }
             ]
           },
           callback: onPaystackSuccess,
@@ -202,13 +197,15 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
           }
         }
         try {
-          alert('Uploading your transfer proof…');
+          alert('Uploading your transfer proof...');
           await saveBooking('pending', ticketCode, proofData);
-          alert('Booking received — pending payment confirmation.');
+          alert('Booking received - pending payment confirmation.');
         } catch (err: any) {
           console.error('Bank transfer submission failed:', err);
           alert(
-            `We could not submit your bank transfer booking. Please try again.\n\nDetails: ${
+            `We could not submit your bank transfer booking. Please try again.
+
+Details: ${
               err?.message || 'Unknown error'
             }`
           );
@@ -226,15 +223,16 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
           const templateParams = {
             full_name: fullName,
+            event_name: EVENT_NAME,
             num_tickets: String(numTickets),
-            amount: `₦${totalAmount.toLocaleString()}`,
-            event_date: 'Friday, October 31st',
-            event_time: 'Evening (check ticket for entry time)',
-            venue: 'Eterniti by Amber, 4b Michelle Okocha Crescent, Parkview Estate, Ikoyi',
+            amount: `NGN ${totalAmount.toLocaleString()}`,
+            event_date: EVENT_DATE,
+            event_time: EVENT_TIME,
+            venue: EVENT_VENUE,
             email: email,
             ticket_code: ticketCode,
             payment_reference: typeof proofData === 'string' ? proofData : (proofData as any).name || '',
-            to_email: email, // include if your template expects recipient variable
+            to_email: email,
           };
 
           if (serviceId && templateId && publicKey) {
@@ -242,7 +240,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
               .send(serviceId, templateId, templateParams, publicKey)
               .then(() => {
                 console.log('EmailJS: bank-transfer confirmation queued');
-                alert('Booking received — a confirmation email was sent to ' + email);
+                alert('Booking received - a confirmation email was sent to ' + email);
               })
               .catch((err) => {
                 console.error('EmailJS send error (bank transfer):', err);
@@ -267,7 +265,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.onload = () => {
-      const result = reader.result as string; // "data:<mime>;base64,AAAA..."
+      const result = reader.result as string;
       const parts = result.split(',');
       const base64 = parts[1] || '';
       const mimeMatch = (parts[0] || '').match(/data:(.*);base64/);
@@ -302,21 +300,19 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
         paymentStatus,
         paymentReference: paymentRef,
         ticketCode,
-        ticketType: 'Regular Ticket',
+        ticketType: `${EVENT_NAME} Ticket`,
         ticketPrice,
         baseAmount,
         processingFee: paystackFee,
         totalAmount,
-        amountPaid: paymentMethod === 'paystack' ? totalAmount : baseAmount,
+        amountPaid: totalAmount,
       };
-      // paymentRef may be a string (reference/URL) or an object with file data
       if (paymentMethod === 'bank_transfer' && paymentRef && typeof paymentRef !== 'string') {
         payload.proofName = paymentRef.name;
         payload.proofMime = paymentRef.mime;
-        payload.proofData = paymentRef.base64; // IMPORTANT: no data: prefix
+        payload.proofData = paymentRef.base64;
       }
 
-      // Use text/plain to avoid CORS preflight. Apps Script will expose the raw string at e.postData.contents.
       const resp = await fetch(sheetUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
@@ -365,14 +361,12 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
     onClose();
   };
 
-  // Close when clicking outside the modal content
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       handleClose();
     }
   };
 
-  // Close on Escape key
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleClose();
@@ -385,23 +379,23 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
   if (submitted) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-brand-brown border border-brand-beige/30 rounded-2xl p-8 max-w-md w-full text-center">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-brand-maroon border border-brand-cream/30 rounded-2xl p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-500" />
           </div>
-          <h3 className="text-2xl font-serif text-brand-ivory mb-4">Booking Confirmed!</h3>
-          <p className="text-brand-beige mb-6">
+          <h3 className="text-2xl font-serif text-brand-cream mb-4">Booking Confirmed!</h3>
+          <p className="text-brand-cream mb-6">
             {paymentMethod === 'paystack'
               ? 'Your payment has been received and your tickets have been confirmed.'
               : 'Your booking has been received. Please complete the bank transfer and we will verify your payment shortly.'}
           </p>
-          <p className="text-sm text-brand-beige/80 mb-6">
+          <p className="text-sm text-brand-cream/80 mb-6">
             A confirmation email with your ticket code has been sent to {email}
           </p>
           <button
             onClick={handleClose}
-            className="w-full px-6 py-3 bg-brand-gold text-brand-brown font-semibold rounded-lg hover:bg-brand-beige transition-colors"
+            className="w-full px-6 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-lg hover:bg-brand-cream transition-colors"
           >
             Close
           </button>
@@ -412,7 +406,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
       onClick={handleOverlayClick}
       data-booking-form
     >
@@ -420,35 +414,35 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
       <button
         aria-label="Close booking form"
         onClick={handleClose}
-        className="absolute top-4 right-4 z-60 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-brand-beige hover:bg-black/60"
+        className="absolute top-4 right-4 z-60 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-brand-cream hover:bg-black/50"
       >
         <X className="w-5 h-5" />
       </button>
 
       <div
-        className="bg-brand-brown border border-brand-beige/30 rounded-2xl w-full max-w-3xl my-8"
+        className="bg-brand-maroon border border-brand-cream/30 rounded-2xl w-full max-w-3xl my-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="border-b border-brand-beige/30 p-6 flex items-center justify-between">
+        <div className="border-b border-brand-cream/30 p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-serif text-brand-ivory">Book Your Tickets</h2>
-            <p className="text-brand-beige/90 text-sm mt-1">Step {step} of 2</p>
+            <h2 className="text-2xl font-serif text-brand-cream">Book Your Tickets</h2>
+            <p className="text-brand-cream/90 text-sm mt-1">Step {step} of 2</p>
           </div>
           <button
             onClick={handleClose}
-            className="text-brand-beige hover:text-brand-ivory transition-colors"
+            className="text-brand-cream hover:text-brand-cream transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Sold Out Notice */}
-        <div className="px-6 py-4 bg-gray-900/30 border-b border-gray-500/30">
+        {/* Event Note */}
+        <div className="px-6 py-4 bg-brand-maroonDark/50 border-b border-gray-500/30">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-            <p className="text-gray-300 text-sm">
-              Early Bird tickets are now sold out. Regular tickets are currently available for ₦100,000.
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <p className="text-brand-cream/80 text-sm">
+              Pastry & Grills at Godaif Village. Paystack ticket: NGN 65,000. Bank transfer ticket: NGN 60,000. Please arrive by 5pm so service flows accordingly.
             </p>
           </div>
         </div>
@@ -464,8 +458,8 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
             <div className="space-y-6">
               {/* Personal Information */}
               <div>
-                <label htmlFor="fullName" className="block text-brand-ivory mb-2 font-medium">
-                  Full Name <span className="text-sm text-brand-beige/80" aria-hidden="true">*</span>
+                <label htmlFor="fullName" className="block text-brand-cream mb-2 font-medium">
+                  Full Name <span className="text-sm text-brand-cream/80" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="fullName"
@@ -477,33 +471,33 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 sm:py-3 text-base bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition"
+                  className="w-full px-4 py-3 sm:py-3 text-base bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none focus:ring-2 focus:ring-brand-cream/20 transition"
                   placeholder="Enter your full name"
                 />
-                <p className="mt-2 text-sm text-brand-beige/80">This name will appear on the booking confirmation and ticket.</p>
+                <p className="mt-2 text-sm text-brand-cream/80">This name will appear on the booking confirmation and ticket.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-brand-ivory mb-2 font-medium">Email Address *</label>
+                  <label className="block text-brand-cream mb-2 font-medium">Email Address *</label>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
+                    className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                     placeholder="your@email.com"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-brand-ivory mb-2 font-medium">Phone (WhatsApp) *</label>
+                  <label className="block text-brand-cream mb-2 font-medium">Phone (WhatsApp) *</label>
                   <input
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
+                    className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                     placeholder="+234 xxx xxx xxxx"
                   />
                 </div>
@@ -511,22 +505,22 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
               {/* Number of Tickets */}
               <div>
-                <label className="block text-brand-ivory mb-2 font-medium">Number of Regular Tickets *</label>
+                <label className="block text-brand-cream mb-2 font-medium">Number of Tickets *</label>
                 <select
                   value={numTickets}
                   onChange={(e) => handleNumTicketsChange(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
+                  className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
-                    <option key={num} value={num}>{num} Regular Ticket{num > 1 ? 's' : ''} - ₦{(num * ticketPrice).toLocaleString()}</option>
+                    <option key={num} value={num}>{num} Ticket{num > 1 ? 's' : ''} - NGN {(num * PAYSTACK_PRICE).toLocaleString()} (Paystack) | NGN {(num * BANK_TRANSFER_PRICE).toLocaleString()} (Transfer)</option>
                   ))}
                 </select>
-                <p className="mt-2 text-sm text-brand-beige/80">Early Bird tickets are sold out. Regular tickets are now available.</p>
+                <p className="mt-2 text-sm text-brand-cream/80">Paystack: NGN 65,000 each. Bank transfer: NGN 60,000 each.</p>
               </div>
 
               {/* Guest Names */}
               <div>
-                <label className="block text-brand-ivory mb-2 font-medium">Guest Names *</label>
+                <label className="block text-brand-cream mb-2 font-medium">Guest Names *</label>
                 <div className="space-y-3">
                   {guestNames.map((name, index) => (
                     <input
@@ -539,7 +533,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                         newNames[index] = e.target.value;
                         setGuestNames(newNames);
                       }}
-                      className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
+                      className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                       placeholder={`Guest ${index + 1} name`}
                     />
                   ))}
@@ -549,25 +543,25 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
               {/* Emergency Contact */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-brand-ivory mb-2 font-medium">Emergency Contact Name *</label>
+                  <label className="block text-brand-cream mb-2 font-medium">Emergency Contact Name *</label>
                   <input
                     type="text"
                     required
                     value={emergencyName}
                     onChange={(e) => setEmergencyName(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
+                    className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                     placeholder="Emergency contact name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-brand-ivory mb-2 font-medium">Emergency Contact Phone *</label>
+                  <label className="block text-brand-cream mb-2 font-medium">Emergency Contact Phone *</label>
                   <input
                     type="tel"
                     required
                     value={emergencyPhone}
                     onChange={(e) => setEmergencyPhone(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none"
+                    className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                     placeholder="+234 xxx xxx xxxx"
                   />
                 </div>
@@ -575,24 +569,24 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
 
               {/* Dietary Preferences */}
               <div>
-                <label className="block text-brand-ivory mb-2 font-medium">Dietary Preferences / Allergies</label>
+                <label className="block text-brand-cream mb-2 font-medium">Dietary Preferences / Allergies</label>
                 <textarea
                   value={dietary}
                   onChange={(e) => setDietary(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none resize-none"
+                  className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none resize-none"
                   placeholder="Any dietary restrictions or allergies we should know about?"
                 />
               </div>
 
               {/* Special Notes */}
               <div>
-                <label className="block text-brand-ivory mb-2 font-medium">Special Notes</label>
+                <label className="block text-brand-cream mb-2 font-medium">Special Notes</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 bg-black/30 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none resize-none"
+                  className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none resize-none"
                   placeholder="Anniversary, birthday celebration, VIP requests, etc."
                 />
               </div>
@@ -605,9 +599,9 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                   required
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 w-4 h-4 accent-brand-gold"
+                  className="mt-1 w-4 h-4 accent-brand-cream"
                 />
-                <label htmlFor="terms" className="text-brand-beige text-sm">
+                <label htmlFor="terms" className="text-brand-cream text-sm">
                   I agree to the event terms and conditions including dress code requirements and the no refund policy. *
                 </label>
               </div>
@@ -618,19 +612,19 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
             <div className="space-y-6">
               {/* Payment Method Selection */}
               <div>
-                <label className="block text-brand-ivory mb-4 font-medium text-lg">Select Payment Method</label>
+                <label className="block text-brand-cream mb-4 font-medium text-lg">Select Payment Method</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('paystack')}
                     className={`p-6 rounded-lg border-2 transition-all ${
                       paymentMethod === 'paystack'
-                        ? 'border-brand-gold bg-brand-gold/10'
-                        : 'border-brand-beige/30 bg-black/20'
+                        ? 'border-brand-cream bg-brand-cream/10'
+                        : 'border-brand-cream/30 bg-brand-maroonDark/30'
                     }`}
                   >
-                    <div className="text-brand-ivory font-semibold mb-2">Pay with Card</div>
-                    <div className="text-brand-beige text-sm">Secure online payment via Paystack</div>
+                    <div className="text-brand-cream font-semibold mb-2">Pay with Card (Paystack)</div>
+                    <div className="text-brand-cream text-sm">NGN 65,000 per guest</div>
                   </button>
 
                   <button
@@ -638,82 +632,68 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
                     onClick={() => setPaymentMethod('bank_transfer')}
                     className={`p-6 rounded-lg border-2 transition-all ${
                       paymentMethod === 'bank_transfer'
-                        ? 'border-brand-gold bg-brand-gold/10'
-                        : 'border-brand-beige/30 bg-black/20'
+                        ? 'border-brand-cream bg-brand-cream/10'
+                        : 'border-brand-cream/30 bg-brand-maroonDark/30'
                     }`}
                   >
-                    <div className="text-brand-ivory font-semibold mb-2">Bank Transfer</div>
-                    <div className="text-brand-beige text-sm">Transfer to our account</div>
+                    <div className="text-brand-cream font-semibold mb-2">Bank Transfer</div>
+                    <div className="text-brand-cream text-sm">NGN 60,000 per guest</div>
                   </button>
                 </div>
               </div>
 
               {/* Payment Details */}
               {paymentMethod === 'bank_transfer' && (
-                <div className="bg-black/20 border border-brand-beige/30 rounded-lg p-6">
-                  <h3 className="text-brand-ivory font-semibold mb-4">Bank Transfer Details</h3>
-                  <div className="space-y-2 text-brand-beige">
+                <div className="bg-brand-maroonDark/30 border border-brand-cream/30 rounded-lg p-6">
+                  <h3 className="text-brand-cream font-semibold mb-4">Bank Transfer Details</h3>
+                  <div className="space-y-2 text-brand-cream">
                     <div className="flex justify-between">
                       <span>Bank Name:</span>
-                      <span className="font-semibold text-brand-ivory">GTBank</span>
+                      <span className="font-semibold text-brand-cream">GTBank</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Account Number:</span>
-                      <span className="font-semibold text-brand-ivory">0489704166</span>
+                      <span className="font-semibold text-brand-cream">0489704166</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Account Name:</span>
-                      <span className="font-semibold text-brand-ivory">Thabolwethu Dube</span>
+                      <span className="font-semibold text-brand-cream">Thabolwethu Dube</span>
                     </div>
-                    <div className="flex justify-between pt-2 border-t border-brand-beige/30">
+                    <div className="flex justify-between pt-2 border-t border-brand-cream/30">
                       <span>Total to Pay:</span>
-                      <span className="font-bold text-brand-gold text-xl">₦{baseAmount.toLocaleString()}</span>
+                      <span className="font-bold text-brand-cream text-xl">NGN {baseAmount.toLocaleString()}</span>
                     </div>
                   </div>
 
                   <div className="mt-6">
-                    <label className="block text-brand-ivory mb-2 font-medium">Upload Proof of Payment *</label>
+                    <label className="block text-brand-cream mb-2 font-medium">Upload Proof of Payment *</label>
                     <input
                       type="file"
                       required={paymentMethod === 'bank_transfer'}
                       accept="image/*,.pdf"
                       onChange={(e) => setProofOfPayment(e.target.files?.[0] || null)}
-                      className="w-full px-4 py-3 bg-black/20 border border-brand-beige/30 rounded-lg text-brand-ivory focus:border-brand-gold focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-brand-gold file:text-brand-brown file:font-semibold"
+                      className="w-full px-4 py-3 bg-brand-maroonDark/30 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-brand-cream file:text-brand-maroon file:font-semibold"
                     />
-                    <p className="text-brand-beige text-sm mt-2">Please upload a screenshot or receipt of your transfer</p>
+                    <p className="text-brand-cream text-sm mt-2">Please upload a screenshot or receipt of your transfer</p>
                   </div>
                 </div>
               )}
 
               {/* Order Summary */}
-              <div className="bg-brand-gold/10 border border-brand-gold/40 rounded-lg p-6">
-                <h3 className="text-brand-ivory font-semibold mb-4">Order Summary</h3>
-                <div className="space-y-2 text-brand-beige">
+              <div className="bg-brand-cream/10 border border-brand-cream/40 rounded-lg p-6">
+                <h3 className="text-brand-cream font-semibold mb-4">Order Summary</h3>
+                <div className="space-y-2 text-brand-cream">
                   <div className="flex justify-between">
-                    <span>Regular Tickets ({numTickets})</span>
-                    <span>₦{baseAmount.toLocaleString()}</span>
+                    <span>Tickets ({numTickets}) {paymentMethod === 'paystack' ? '(Paystack)' : '(Bank transfer)'}</span>
+                    <span>NGN {baseAmount.toLocaleString()}</span>
                   </div>
-                  {paymentMethod === 'paystack' && (
-                    <div className="flex justify-between">
-                      <span>Processing Fee (Paystack)</span>
-                      <span>₦{paystackFee.toLocaleString()}</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between pt-3 border-t border-brand-gold/40 text-brand-ivory font-bold text-lg">
+                  <div className="flex justify-between pt-3 border-t border-brand-cream/40 text-brand-cream font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-brand-gold">₦{totalAmount.toLocaleString()}</span>
+                    <span className="text-brand-cream">NGN {totalAmount.toLocaleString()}</span>
                   </div>
-                  
-                  {paymentMethod === 'paystack' ? (
-                    <div className="text-xs text-brand-beige/70 text-center mt-2">
-                      Ticket Price: ₦{baseAmount.toLocaleString()} • Fee: ₦{paystackFee.toLocaleString()} • Total: ₦{totalAmount.toLocaleString()}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-brand-beige/70 text-center mt-2">
-                      You pay exactly ₦{ticketPrice.toLocaleString()} per ticket by bank transfer.
-                    </div>
-                  )}
+                  <div className="text-xs text-brand-cream/70 text-center mt-2">
+                    Paystack tickets: NGN {PAYSTACK_PRICE.toLocaleString()} each (card processing included). Bank transfer tickets: NGN {BANK_TRANSFER_PRICE.toLocaleString()} each.
+                  </div>
                 </div>
               </div>
             </div>
@@ -725,7 +705,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="flex-1 px-6 py-3 border border-brand-beige/30 text-brand-ivory rounded-lg hover:bg-white/5 transition-colors"
+                className="flex-1 px-6 py-3 border border-brand-cream/30 text-brand-cream rounded-lg hover:bg-white/5 transition-colors"
               >
                 Back
               </button>
@@ -733,7 +713,7 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-brand-gold text-brand-brown font-semibold rounded-lg hover:bg-brand-beige transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-lg hover:bg-brand-cream transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

@@ -266,7 +266,7 @@ export default function Gallery3D() {
   }, [isMobile]);
 
   return (
-    <section className="relative py-20 px-4 bg-brand-brown overflow-hidden">
+    <section className="relative py-20 px-4 bg-brand-maroon overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10"
         style={{
@@ -278,14 +278,14 @@ export default function Gallery3D() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-4">
-            <Camera className="w-10 h-10 text-brand-gold" />
+            <Camera className="w-10 h-10 text-brand-cream" />
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl text-brand-ivory mb-4">
+          <h2 className="font-serif text-4xl md:text-5xl text-brand-cream mb-4">
             Our Culinary Journey
           </h2>
-          <div className="w-24 h-px bg-gradient-to-r from-transparent via-brand-beige to-transparent mx-auto mb-4"></div>
-          <p className="text-brand-beige/90 text-lg max-w-2xl mx-auto">
-            Experience the artistry and elegance that awaits you at Bon Appétit
+          <div className="w-24 h-px bg-gradient-to-r from-transparent via-brand-cream to-transparent mx-auto mb-4"></div>
+          <p className="text-brand-cream/90 text-lg max-w-2xl mx-auto">
+            Experience the artistry and flavor that await you at Pastry & Grills
           </p>
         </div>
 
@@ -324,7 +324,7 @@ export default function Gallery3D() {
                   <img
                     src={image.src}
                     alt={image.alt}
-                    className="w-64 h-80 md:w-80 md:h-96 object-cover rounded-lg border-2 border-brand-gold/40 transition-all duration-300"
+                    className="w-64 h-80 md:w-80 md:h-96 object-cover rounded-lg border-2 border-brand-cream/40 transition-all duration-300"
                     style={{ 
                       filter: 'drop-shadow(0 25px 50px rgba(0,0,0,0.4)) drop-shadow(0 0 15px rgba(201, 167, 122, 0.2))'
                     }}
@@ -334,7 +334,7 @@ export default function Gallery3D() {
                   />
                   
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-brand-brown/20 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-maroon/20 via-transparent to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   
                   {/* Image caption */}
                   <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -350,7 +350,7 @@ export default function Gallery3D() {
           {/* Navigation Arrows */}
           <button
             onClick={rotateLeft}
-            className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 z-20 p-3 rounded-full bg-brand-brown/80 backdrop-blur-sm border border-brand-gold/30 text-brand-ivory hover:bg-brand-gold/20 hover:border-brand-gold/60 transition-all duration-300 group"
+            className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 z-20 p-3 rounded-full bg-brand-maroon/80 backdrop-blur-sm border border-brand-cream/30 text-brand-cream hover:bg-brand-cream/20 hover:border-brand-cream/60 transition-all duration-300 group"
             aria-label="Previous image"
           >
             <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
@@ -358,7 +358,7 @@ export default function Gallery3D() {
 
           <button
             onClick={rotateRight}
-            className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 z-20 p-3 rounded-full bg-brand-brown/80 backdrop-blur-sm border border-brand-gold/30 text-brand-ivory hover:bg-brand-gold/20 hover:border-brand-gold/60 transition-all duration-300 group"
+            className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 z-20 p-3 rounded-full bg-brand-maroon/80 backdrop-blur-sm border border-brand-cream/30 text-brand-cream hover:bg-brand-cream/20 hover:border-brand-cream/60 transition-all duration-300 group"
             aria-label="Next image"
           >
             <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform duration-300" />
@@ -367,16 +367,16 @@ export default function Gallery3D() {
 
         {/* Instructions */}
         <div className="text-center mt-8">
-          <p className="text-brand-beige/70 text-sm">
+          <p className="text-brand-cream/70 text-sm">
             Drag to rotate • Click arrows to navigate
           </p>
         </div>
 
         {/* Decorative elements */}
         <div className="flex justify-center mt-12 space-x-4">
-          <div className="w-2 h-2 bg-brand-gold rounded-full opacity-60"></div>
-          <div className="w-2 h-2 bg-brand-beige rounded-full opacity-40"></div>
-          <div className="w-2 h-2 bg-brand-gold rounded-full opacity-60"></div>
+          <div className="w-2 h-2 bg-brand-cream rounded-full opacity-60"></div>
+          <div className="w-2 h-2 bg-brand-cream rounded-full opacity-40"></div>
+          <div className="w-2 h-2 bg-brand-cream rounded-full opacity-60"></div>
         </div>
       </div>
     </section>

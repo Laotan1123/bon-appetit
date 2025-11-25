@@ -3,47 +3,64 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --pattern: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23F8F2EA' stroke-width='8' stroke-linecap='round' stroke-opacity='0.12'%3E%3Cpath d='M30 30h40m60 0h40M20 100c20-10 40-10 60 0 20 10 40 10 60 0 20-10 40-10 60 0'/%3E%3Cpath d='M50 170c15-10 30-10 45 0s30 10 45 0 30-10 45 0'/%3E%3Ccircle cx='40' cy='140' r='10'/%3E%3Ccircle cx='160' cy='60' r='10'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
   html, body, #root {
     height: 100%;
   }
   body {
-    @apply bg-brand-brown text-brand-ivory font-sans;
+    @apply bg-brand-maroon text-brand-cream font-sans antialiased;
   }
   h1, h2, h3, h4 {
     @apply font-serif;
+    letter-spacing: 0.02em;
   }
 }
 
 @layer components {
+  .pattern-bg {
+    background-image: var(--pattern);
+    background-size: 360px 360px;
+    background-repeat: repeat;
+  }
+
+  .framed-card {
+    @apply border border-brand-cream/40 bg-brand-maroon/70 backdrop-blur-sm rounded-3xl shadow-2xl shadow-black/20;
+  }
+
+  .pill {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-full bg-brand-cream text-brand-maroon font-semibold uppercase tracking-wide text-sm;
+  }
+
   .carousel-container {
     perspective: 2000px;
     transform-style: preserve-3d;
     will-change: transform;
     backface-visibility: hidden;
-    transform: translateZ(0); /* Force GPU layer */
+    transform: translateZ(0);
   }
   
   .carousel-item {
     transform-style: preserve-3d;
     will-change: transform, opacity;
     backface-visibility: hidden;
-    transform: translateZ(0); /* Force GPU layer */
+    transform: translateZ(0);
   }
   
   .carousel-item img {
     will-change: transform, opacity;
     backface-visibility: hidden;
-    transform: translateZ(0); /* Force GPU layer */
+    transform: translateZ(0);
   }
   
-  /* Mobile-specific optimizations */
   @media (max-width: 768px) {
     .carousel-container {
-      perspective: 1200px; /* Reduced for mobile */
+      perspective: 1200px;
     }
-    
     .carousel-item img {
-      image-rendering: -webkit-optimize-contrast; /* Faster rendering */
+      image-rendering: -webkit-optimize-contrast;
     }
   }
 }
