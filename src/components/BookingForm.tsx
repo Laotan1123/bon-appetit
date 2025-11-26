@@ -10,7 +10,7 @@ interface BookingFormProps {
 type PaymentMethod = 'paystack' | 'bank_transfer';
 
 const PAYSTACK_PRICE = 65000;
-const BANK_TRANSFER_PRICE = 60000;
+const BANK_TRANSFER_PRICE = 60500;
 const EVENT_NAME = 'Pastry & Grills';
 const EVENT_DATE = 'Saturday, November 29th';
 const EVENT_TIME = '5:00PM - 12:00AM';
@@ -442,7 +442,7 @@ Details: ${
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <p className="text-brand-cream/80 text-sm">
-              Pastry & Grills at Godaif Village. Paystack ticket: NGN 65,000. Bank transfer ticket: NGN 60,000. Please arrive by 5pm so service flows accordingly.
+              Pastry & Grills at Godaif Village. Paystack ticket: NGN 65,000. Bank transfer ticket: NGN 60,500. Please arrive by 5pm so service flows accordingly.
             </p>
           </div>
         </div>
@@ -515,7 +515,7 @@ Details: ${
                     <option key={num} value={num}>{num} Ticket{num > 1 ? 's' : ''} - NGN {(num * PAYSTACK_PRICE).toLocaleString()} (Paystack) | NGN {(num * BANK_TRANSFER_PRICE).toLocaleString()} (Transfer)</option>
                   ))}
                 </select>
-                <p className="mt-2 text-sm text-brand-cream/80">Paystack: NGN 65,000 each. Bank transfer: NGN 60,000 each.</p>
+                <p className="mt-2 text-sm text-brand-cream/80">Paystack: NGN 65,000 each. Bank transfer: NGN 60,500 each. Prices include processing fees.</p>
               </div>
 
               {/* Guest Names */}
@@ -637,7 +637,7 @@ Details: ${
                     }`}
                   >
                     <div className="text-brand-cream font-semibold mb-2">Bank Transfer</div>
-                    <div className="text-brand-cream text-sm">NGN 60,000 per guest</div>
+                    <div className="text-brand-cream text-sm">NGN 60,500 per guest</div>
                   </button>
                 </div>
               </div>
@@ -692,7 +692,7 @@ Details: ${
                     <span className="text-brand-cream">NGN {totalAmount.toLocaleString()}</span>
                   </div>
                   <div className="text-xs text-brand-cream/70 text-center mt-2">
-                    Paystack tickets: NGN {PAYSTACK_PRICE.toLocaleString()} each (card processing included). Bank transfer tickets: NGN {BANK_TRANSFER_PRICE.toLocaleString()} each.
+                    Paystack tickets: NGN {PAYSTACK_PRICE.toLocaleString()} each (card processing included). Bank transfer tickets: NGN {BANK_TRANSFER_PRICE.toLocaleString()} each. All prices include processing fees.
                   </div>
                 </div>
               </div>

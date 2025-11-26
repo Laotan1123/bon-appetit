@@ -28,8 +28,8 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
     },
     {
       name: 'Bank Transfer Ticket',
-      price: 60000,
-      description: 'Pay via bank transfer and upload proof (NGN 60,000 per guest).',
+      price: 60500,
+      description: 'Pay via bank transfer and upload proof (NGN 60,500 per guest).',
       icon: Banknote,
       tag: 'Bank Transfer',
       tagColor: 'bg-brand-cream/10 text-brand-cream/90 border-brand-cream/30',
@@ -144,7 +144,7 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
       {variant === 'full' && (
         <div className="text-center mt-8">
           <p className="text-brand-cream/70 text-sm">
-            Paystack: NGN 65,000 per guest. Bank transfer: NGN 60,000 per guest.
+            Paystack: NGN 65,000 per guest. Bank transfer: NGN 60,500 per guest.
           </p>
         </div>
       )}
