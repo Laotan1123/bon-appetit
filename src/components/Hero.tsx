@@ -41,9 +41,7 @@ export default function Hero({ onBookNowClick }: HeroProps) {
           </div>
 
           <div className="bg-brand-cream text-brand-maroon rounded-2xl px-6 py-4 inline-flex items-center gap-3 text-lg font-semibold uppercase tracking-wide mb-6">
-            <span>Paystack: NGN 65,000</span>
-            <span className="w-1 h-1 rounded-full bg-brand-maroon" />
-            <span>Transfer: NGN 60,500</span>
+            <span>Bank Transfer: NGN 60,500</span>
           </div>
 
           <p className="text-brand-cream/80 max-w-3xl mx-auto text-base md:text-lg mb-8">

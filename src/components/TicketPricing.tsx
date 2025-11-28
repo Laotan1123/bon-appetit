@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Ticket, CreditCard, Banknote } from 'lucide-react';
+import { Ticket, Banknote } from 'lucide-react';
 
 interface TicketPricingProps {
   variant?: 'full' | 'compact';
@@ -17,30 +17,20 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
 
   const ticketCategories = [
     {
-      name: 'Paystack Ticket',
-      price: 65000,
-      description: 'Online card payment via Paystack (NGN 65,000 per guest).',
-      icon: CreditCard,
-      tag: 'Card Payment',
-      tagColor: 'bg-brand-cream/20 text-brand-cream border-brand-cream/40',
-      isPopular: true,
-      isSoldOut: false
-    },
-    {
       name: 'Bank Transfer Ticket',
       price: 60500,
-      description: 'Pay via bank transfer and upload proof (NGN 60,500 per guest).',
+      description: 'Pay via bank transfer and upload proof (NGN 60,500 per guest). Prices include processing fees.',
       icon: Banknote,
       tag: 'Bank Transfer',
       tagColor: 'bg-brand-cream/10 text-brand-cream/90 border-brand-cream/30',
-      isPopular: false,
+      isPopular: true,
       isSoldOut: false
     }
   ];
 
   const containerClasses = variant === 'compact' 
     ? 'space-y-3' 
-    : 'grid grid-cols-1 md:grid-cols-2 gap-6';
+    : 'grid grid-cols-1 md:grid-cols-1 gap-6';
 
   return (
     <div 
@@ -57,7 +47,7 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
             <h2 className="text-3xl font-serif text-brand-cream uppercase tracking-wide">Ticket Options</h2>
           </div>
           <p className="text-brand-cream/80 text-lg">
-            Choose your preferred payment method for Pastry &amp; Grills
+            Bank transfer only. Prices include processing fees.
           </p>
         </div>
       )}
@@ -74,9 +64,7 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
                 relative p-6 rounded-2xl border transition-all duration-300 ease-out
                 ${ticket.isSoldOut 
                   ? 'border-brand-cream/20 bg-brand-maroonDark/30 opacity-60 cursor-not-allowed'
-                  : ticket.isPopular 
-                    ? 'border-brand-cream bg-brand-maroonDark/60 shadow-lg shadow-black/30 cursor-pointer' 
-                    : 'border-brand-cream/40 bg-brand-maroonDark/50 hover:border-brand-cream hover:bg-brand-maroonDark/70 cursor-pointer'
+                  : 'border-brand-cream bg-brand-maroonDark/60 shadow-lg shadow-black/30 cursor-pointer'
                 }
                 ${!ticket.isSoldOut && 'hover:shadow-xl hover:shadow-black/30 hover:-translate-y-1'}
                 ${isVisible 
@@ -144,7 +132,7 @@ export default function TicketPricing({ variant = 'full', className = '', onRegu
       {variant === 'full' && (
         <div className="text-center mt-8">
           <p className="text-brand-cream/70 text-sm">
-            Paystack: NGN 65,000 per guest. Bank transfer: NGN 60,500 per guest.
+            Bank transfer: NGN 60,500 per guest. Prices include processing fees.
           </p>
         </div>
       )}

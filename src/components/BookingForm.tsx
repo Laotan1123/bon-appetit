@@ -7,17 +7,13 @@ interface BookingFormProps {
   onClose: () => void;
 }
 
-type PaymentMethod = 'paystack' | 'bank_transfer';
-
-const PAYSTACK_PRICE = 65000;
-const BANK_TRANSFER_PRICE = 60500;
+const TICKET_PRICE = 60500;
 const EVENT_NAME = 'Pastry & Grills';
 const EVENT_DATE = 'Saturday, November 29th';
 const EVENT_TIME = '5:00PM - 12:00AM';
 const EVENT_VENUE = 'Godaif Village, Casa Asmarina, Turnbull Road, Ikoyi, Lagos';
 
 export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
-  // Initialize EmailJS with public key (supports VITE_ and REACT_APP_ env names)
   useEffect(() => {
     const publicKey =
       import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
@@ -34,7 +30,6 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Form state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -45,13 +40,10 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
   const [dietary, setDietary] = useState('');
   const [notes, setNotes] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('paystack');
   const [proofOfPayment, setProofOfPayment] = useState<File | null>(null);
 
-  const ticketPrice = paymentMethod === 'paystack' ? PAYSTACK_PRICE : BANK_TRANSFER_PRICE;
-  const baseAmount = ticketPrice * numTickets;
-  const paystackFee = 0; // price already accounts for card processing
-  const totalAmount = baseAmount + paystackFee;
+  const baseAmount = TICKET_PRICE * numTickets;
+  const totalAmount = baseAmount;
 
   const updateGuestNames = (count: number) => {
     const newGuestNames = Array(count).fill('').map((_, i) => guestNames[i] || '');
@@ -63,7 +55,6 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
     updateGuestNames(value);
   };
 
-  // Generate unique ticket code
   const generateTicketCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = 'BA-';
@@ -71,19 +62,6 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return code;
-  };
-
-  // Load Paystack inline script when needed
-  const loadPaystack = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if ((window as any).PaystackPop) return resolve();
-      const script = document.createElement('script');
-      script.src = 'https://js.paystack.co/v1/inline.js';
-      script.async = true;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load Paystack script'));
-      document.head.appendChild(script);
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,159 +77,72 @@ export default function BookingForm({ isVisible, onClose }: BookingFormProps) {
     try {
       const ticketCode = generateTicketCode();
 
-      if (paymentMethod === 'paystack') {
-        // Ensure Paystack script is loaded
-        await loadPaystack();
-
-        const ref = 'BA' + Date.now() + Math.floor(Math.random() * 1000000);
-
-        if (!import.meta.env.VITE_PAYSTACK_PUBLIC_KEY) {
-          throw new Error('Paystack public key not configured (VITE_PAYSTACK_PUBLIC_KEY)');
-        }
-
-        const onPaystackSuccess = function (response: any) {
-          setLoading(true);
-          saveBooking('paid', ticketCode, response.reference)
-            .then(() => {
-              const serviceId =
-                import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.REACT_APP_EMAILJS_SERVICE_ID;
-              const templateId =
-                import.meta.env.VITE_EMAILJS_TEMPLATE_ID || import.meta.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-
-              const templateParams = {
-                full_name: fullName,
-                event_name: EVENT_NAME,
-                num_tickets: String(numTickets),
-                amount: `NGN ${totalAmount.toLocaleString()}`,
-                event_date: EVENT_DATE,
-                event_time: EVENT_TIME,
-                venue: EVENT_VENUE,
-                email: email,
-                ticket_code: ticketCode,
-                payment_reference: response.reference,
-                to_email: email,
-              };
-
-              if (serviceId && templateId) {
-                const publicKey =
-                  import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-
-                emailjs
-                  .send(serviceId, templateId, templateParams, publicKey)
-                  .then((res) => {
-                    console.log('EmailJS: confirmation email queued', res);
-                    alert('Booking confirmed - a confirmation email was sent to ' + email);
-                  })
-                  .catch((err) => {
-                    console.error('EmailJS send error:', err);
-                    alert('Booking confirmed but we could not send a confirmation email. Please check your inbox or contact support.');
-                  });
-              } else {
-                console.warn('EmailJS service/template not configured in env vars');
-              }
-             })
-             .catch((err) => {
-               console.error('Error saving booking after Paystack success:', err);
-               alert('Payment succeeded but saving booking failed. Please contact support.');
-             })
-             .finally(() => {
-               setLoading(false);
-             });
-         };
-
-        const onPaystackClose = function () {
-          setLoading(false);
-        };
-
-        const handler = (window as any).PaystackPop.setup({
-          key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-          email: email,
-          amount: totalAmount * 100, // amount in kobo (price already includes card processing)
-          currency: 'NGN',
-          ref: ref,
-          metadata: {
-            custom_fields: [
-              { display_name: 'Full Name', variable_name: 'full_name', value: fullName },
-              { display_name: 'Phone', variable_name: 'phone', value: phone },
-              { display_name: 'Number of Tickets', variable_name: 'num_tickets', value: numTickets },
-              { display_name: 'Ticket Price', variable_name: 'ticket_price', value: ticketPrice },
-              { display_name: 'Total Amount', variable_name: 'total_amount', value: totalAmount }
-            ]
-          },
-          callback: onPaystackSuccess,
-          onClose: onPaystackClose
-        });
-
-        handler.openIframe();
-      } else {
-        // Bank transfer - convert uploaded proof to base64 and save
-        let proofData: ProofData = '';
-        if (proofOfPayment) {
-          try {
-            proofData = await fileToBase64(proofOfPayment);
-          } catch (err) {
-            console.error('Failed to read proof of payment file:', err);
-            alert('Could not read the uploaded proof of payment. Please try again.');
-            setLoading(false);
-            return;
-          }
-        }
+      let proofData: ProofData = '';
+      if (proofOfPayment) {
         try {
-          alert('Uploading your transfer proof...');
-          await saveBooking('pending', ticketCode, proofData);
-          alert('Booking received - pending payment confirmation.');
-        } catch (err: any) {
-          console.error('Bank transfer submission failed:', err);
-          alert(
-            `We could not submit your bank transfer booking. Please try again.
+          proofData = await fileToBase64(proofOfPayment);
+        } catch (err) {
+          console.error('Failed to read proof of payment file:', err);
+          alert('Could not read the uploaded proof of payment. Please try again.');
+          setLoading(false);
+          return;
+        }
+      }
+
+      try {
+        alert('Uploading your transfer proof...');
+        await saveBooking('pending', ticketCode, proofData);
+        alert('Booking received - pending payment confirmation.');
+      } catch (err: any) {
+        console.error('Bank transfer submission failed:', err);
+        alert(
+          `We could not submit your bank transfer booking. Please try again.
 
 Details: ${
-              err?.message || 'Unknown error'
-            }`
-          );
-          throw err;
+            err?.message || 'Unknown error'
+          }`
+        );
+        throw err;
+      }
+
+      try {
+        const serviceId =
+          import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.REACT_APP_EMAILJS_SERVICE_ID;
+        const templateId =
+          import.meta.env.VITE_EMAILJS_TEMPLATE_ID || import.meta.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+        const publicKey =
+          import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+
+        const templateParams = {
+          full_name: fullName,
+          event_name: EVENT_NAME,
+          num_tickets: String(numTickets),
+          amount: `NGN ${totalAmount.toLocaleString()}`,
+          event_date: EVENT_DATE,
+          event_time: EVENT_TIME,
+          venue: EVENT_VENUE,
+          email: email,
+          ticket_code: ticketCode,
+          payment_reference: typeof proofData === 'string' ? proofData : (proofData as any).name || '',
+          to_email: email,
+        };
+
+        if (serviceId && templateId && publicKey) {
+          emailjs
+            .send(serviceId, templateId, templateParams, publicKey)
+            .then(() => {
+              console.log('EmailJS: bank-transfer confirmation queued');
+              alert('Booking received - a confirmation email was sent to ' + email);
+            })
+            .catch((err) => {
+              console.error('EmailJS send error (bank transfer):', err);
+              alert('Booking received but we could not send a confirmation email. Please check your inbox or contact support.');
+            });
+        } else {
+          console.warn('EmailJS service/template not configured in env vars (bank transfer)');
         }
-
-        // Send confirmation email for bank transfer as well
-        try {
-          const serviceId =
-            import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.REACT_APP_EMAILJS_SERVICE_ID;
-          const templateId =
-            import.meta.env.VITE_EMAILJS_TEMPLATE_ID || import.meta.env.REACT_APP_EMAILJS_TEMPLATE_ID;
-          const publicKey =
-            import.meta.env.VITE_EMAILJS_PUBLIC_KEY || import.meta.env.REACT_APP_EMAILJS_PUBLIC_KEY;
-
-          const templateParams = {
-            full_name: fullName,
-            event_name: EVENT_NAME,
-            num_tickets: String(numTickets),
-            amount: `NGN ${totalAmount.toLocaleString()}`,
-            event_date: EVENT_DATE,
-            event_time: EVENT_TIME,
-            venue: EVENT_VENUE,
-            email: email,
-            ticket_code: ticketCode,
-            payment_reference: typeof proofData === 'string' ? proofData : (proofData as any).name || '',
-            to_email: email,
-          };
-
-          if (serviceId && templateId && publicKey) {
-            emailjs
-              .send(serviceId, templateId, templateParams, publicKey)
-              .then(() => {
-                console.log('EmailJS: bank-transfer confirmation queued');
-                alert('Booking received - a confirmation email was sent to ' + email);
-              })
-              .catch((err) => {
-                console.error('EmailJS send error (bank transfer):', err);
-                alert('Booking received but we could not send a confirmation email. Please check your inbox or contact support.');
-              });
-          } else {
-            console.warn('EmailJS service/template not configured in env vars (bank transfer)');
-          }
-        } catch (err) {
-          console.error('Error sending confirmation email (bank transfer):', err);
-        }
+      } catch (err) {
+        console.error('Error sending confirmation email (bank transfer):', err);
       }
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -296,18 +187,18 @@ Details: ${
         emergencyPhone,
         dietary,
         notes,
-        paymentMethod,
+        paymentMethod: 'bank_transfer',
         paymentStatus,
         paymentReference: paymentRef,
         ticketCode,
         ticketType: `${EVENT_NAME} Ticket`,
-        ticketPrice,
+        ticketPrice: TICKET_PRICE,
         baseAmount,
-        processingFee: paystackFee,
+        processingFee: 0,
         totalAmount,
         amountPaid: totalAmount,
       };
-      if (paymentMethod === 'bank_transfer' && paymentRef && typeof paymentRef !== 'string') {
+      if (paymentRef && typeof paymentRef !== 'string') {
         payload.proofName = paymentRef.name;
         payload.proofMime = paymentRef.mime;
         payload.proofData = paymentRef.base64;
@@ -351,7 +242,6 @@ Details: ${
     setDietary('');
     setNotes('');
     setTermsAccepted(false);
-    setPaymentMethod('paystack');
     setProofOfPayment(null);
     setSubmitted(false);
   };
@@ -384,18 +274,16 @@ Details: ${
           <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-green-500" />
           </div>
-          <h3 className="text-2xl font-serif text-brand-cream mb-4">Booking Confirmed!</h3>
-          <p className="text-brand-cream mb-6">
-            {paymentMethod === 'paystack'
-              ? 'Your payment has been received and your tickets have been confirmed.'
-              : 'Your booking has been received. Please complete the bank transfer and we will verify your payment shortly.'}
+          <h3 className="text-2xl font-serif text-brand-cream mb-4">Booking Received!</h3>
+          <p className="text-brand-cream/90 mb-6">
+            Your booking has been received. Please complete the bank transfer and we will verify your payment shortly.
           </p>
           <p className="text-sm text-brand-cream/80 mb-6">
             A confirmation email with your ticket code has been sent to {email}
           </p>
           <button
             onClick={handleClose}
-            className="w-full px-6 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-lg hover:bg-brand-cream transition-colors"
+            className="w-full px-6 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-lg hover:bg-brand-cream/90 transition-colors"
           >
             Close
           </button>
@@ -410,11 +298,10 @@ Details: ${
       onClick={handleOverlayClick}
       data-booking-form
     >
-      {/* Floating close button (top-right) */}
       <button
         aria-label="Close booking form"
         onClick={handleClose}
-        className="absolute top-4 right-4 z-60 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-brand-cream hover:bg-black/50"
+        className="absolute top-4 right-4 z-60 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-brand-cream hover:bg-black/60"
       >
         <X className="w-5 h-5" />
       </button>
@@ -423,7 +310,6 @@ Details: ${
         className="bg-brand-maroon border border-brand-cream/30 rounded-2xl w-full max-w-3xl my-8"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="border-b border-brand-cream/30 p-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-serif text-brand-cream">Book Your Tickets</h2>
@@ -437,17 +323,15 @@ Details: ${
           </button>
         </div>
 
-        {/* Event Note */}
-        <div className="px-6 py-4 bg-brand-maroonDark/50 border-b border-gray-500/30">
+        <div className="px-6 py-4 bg-brand-maroonDark/50 border-b border-brand-cream/30">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <p className="text-brand-cream/80 text-sm">
-              Pastry & Grills at Godaif Village. Paystack ticket: NGN 65,000. Bank transfer ticket: NGN 60,500. Please arrive by 5pm so service flows accordingly.
+              Pastry & Grills at Godaif Village. Bank transfer ticket: NGN 60,500. Please arrive by 5pm so service flows accordingly. Prices include processing fees.
             </p>
           </div>
         </div>
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit}
           className="p-4 sm:p-8 max-h-[80vh] overflow-y-auto"
@@ -456,7 +340,6 @@ Details: ${
         >
           {step === 1 && (
             <div className="space-y-6">
-              {/* Personal Information */}
               <div>
                 <label htmlFor="fullName" className="block text-brand-cream mb-2 font-medium">
                   Full Name <span className="text-sm text-brand-cream/80" aria-hidden="true">*</span>
@@ -471,7 +354,7 @@ Details: ${
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 sm:py-3 text-base bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none focus:ring-2 focus:ring-brand-cream/20 transition"
+                  className="w-full px-4 py-3 sm:py-3 text-base bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none focus:ring-2 focus:ring-brand-cream/30 transition"
                   placeholder="Enter your full name"
                 />
                 <p className="mt-2 text-sm text-brand-cream/80">This name will appear on the booking confirmation and ticket.</p>
@@ -503,7 +386,6 @@ Details: ${
                 </div>
               </div>
 
-              {/* Number of Tickets */}
               <div>
                 <label className="block text-brand-cream mb-2 font-medium">Number of Tickets *</label>
                 <select
@@ -512,13 +394,12 @@ Details: ${
                   className="w-full px-4 py-3 bg-brand-maroonDark/40 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
-                    <option key={num} value={num}>{num} Ticket{num > 1 ? 's' : ''} - NGN {(num * PAYSTACK_PRICE).toLocaleString()} (Paystack) | NGN {(num * BANK_TRANSFER_PRICE).toLocaleString()} (Transfer)</option>
+                    <option key={num} value={num}>{num} Ticket{num > 1 ? 's' : ''} - NGN {(num * TICKET_PRICE).toLocaleString()} (Bank transfer)</option>
                   ))}
                 </select>
-                <p className="mt-2 text-sm text-brand-cream/80">Paystack: NGN 65,000 each. Bank transfer: NGN 60,500 each. Prices include processing fees.</p>
+                <p className="mt-2 text-sm text-brand-cream/80">Bank transfer: NGN 60,500 each. Prices include processing fees.</p>
               </div>
 
-              {/* Guest Names */}
               <div>
                 <label className="block text-brand-cream mb-2 font-medium">Guest Names *</label>
                 <div className="space-y-3">
@@ -540,7 +421,6 @@ Details: ${
                 </div>
               </div>
 
-              {/* Emergency Contact */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-brand-cream mb-2 font-medium">Emergency Contact Name *</label>
@@ -567,7 +447,6 @@ Details: ${
                 </div>
               </div>
 
-              {/* Dietary Preferences */}
               <div>
                 <label className="block text-brand-cream mb-2 font-medium">Dietary Preferences / Allergies</label>
                 <textarea
@@ -579,7 +458,6 @@ Details: ${
                 />
               </div>
 
-              {/* Special Notes */}
               <div>
                 <label className="block text-brand-cream mb-2 font-medium">Special Notes</label>
                 <textarea
@@ -591,7 +469,6 @@ Details: ${
                 />
               </div>
 
-              {/* Terms and Conditions */}
               <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -610,81 +487,45 @@ Details: ${
 
           {step === 2 && (
             <div className="space-y-6">
-              {/* Payment Method Selection */}
-              <div>
-                <label className="block text-brand-cream mb-4 font-medium text-lg">Select Payment Method</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('paystack')}
-                    className={`p-6 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'paystack'
-                        ? 'border-brand-cream bg-brand-cream/10'
-                        : 'border-brand-cream/30 bg-brand-maroonDark/30'
-                    }`}
-                  >
-                    <div className="text-brand-cream font-semibold mb-2">Pay with Card (Paystack)</div>
-                    <div className="text-brand-cream text-sm">NGN 65,000 per guest</div>
-                  </button>
+              <div className="bg-brand-maroonDark/60 border border-brand-cream/30 rounded-lg p-6">
+                <h3 className="text-brand-cream font-semibold mb-4">Bank Transfer Details</h3>
+                <div className="space-y-2 text-brand-cream/90">
+                  <div className="flex justify-between">
+                    <span>Bank Name:</span>
+                    <span className="font-semibold text-brand-cream">GTBank</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Account Number:</span>
+                    <span className="font-semibold text-brand-cream">0489704166</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Account Name:</span>
+                    <span className="font-semibold text-brand-cream">Thabolwethu Dube</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-brand-cream/30">
+                    <span>Total to Pay:</span>
+                    <span className="font-bold text-brand-cream text-xl">NGN {baseAmount.toLocaleString()}</span>
+                  </div>
+                </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('bank_transfer')}
-                    className={`p-6 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'bank_transfer'
-                        ? 'border-brand-cream bg-brand-cream/10'
-                        : 'border-brand-cream/30 bg-brand-maroonDark/30'
-                    }`}
-                  >
-                    <div className="text-brand-cream font-semibold mb-2">Bank Transfer</div>
-                    <div className="text-brand-cream text-sm">NGN 60,500 per guest</div>
-                  </button>
+                <div className="mt-6">
+                  <label className="block text-brand-cream mb-2 font-medium">Upload Proof of Payment *</label>
+                  <input
+                    type="file"
+                    required
+                    accept="image/*,.pdf"
+                    onChange={(e) => setProofOfPayment(e.target.files?.[0] || null)}
+                    className="w-full px-4 py-3 bg-brand-maroonDark/30 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-brand-cream file:text-brand-maroon file:font-semibold"
+                  />
+                  <p className="text-brand-cream/80 text-sm mt-2">Please upload a screenshot or receipt of your transfer. Prices include processing fees.</p>
                 </div>
               </div>
 
-              {/* Payment Details */}
-              {paymentMethod === 'bank_transfer' && (
-                <div className="bg-brand-maroonDark/30 border border-brand-cream/30 rounded-lg p-6">
-                  <h3 className="text-brand-cream font-semibold mb-4">Bank Transfer Details</h3>
-                  <div className="space-y-2 text-brand-cream">
-                    <div className="flex justify-between">
-                      <span>Bank Name:</span>
-                      <span className="font-semibold text-brand-cream">GTBank</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Account Number:</span>
-                      <span className="font-semibold text-brand-cream">0489704166</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Account Name:</span>
-                      <span className="font-semibold text-brand-cream">Thabolwethu Dube</span>
-                    </div>
-                    <div className="flex justify-between pt-2 border-t border-brand-cream/30">
-                      <span>Total to Pay:</span>
-                      <span className="font-bold text-brand-cream text-xl">NGN {baseAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <label className="block text-brand-cream mb-2 font-medium">Upload Proof of Payment *</label>
-                    <input
-                      type="file"
-                      required={paymentMethod === 'bank_transfer'}
-                      accept="image/*,.pdf"
-                      onChange={(e) => setProofOfPayment(e.target.files?.[0] || null)}
-                      className="w-full px-4 py-3 bg-brand-maroonDark/30 border border-brand-cream/30 rounded-lg text-brand-cream focus:border-brand-cream focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-brand-cream file:text-brand-maroon file:font-semibold"
-                    />
-                    <p className="text-brand-cream text-sm mt-2">Please upload a screenshot or receipt of your transfer</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Order Summary */}
               <div className="bg-brand-cream/10 border border-brand-cream/40 rounded-lg p-6">
                 <h3 className="text-brand-cream font-semibold mb-4">Order Summary</h3>
-                <div className="space-y-2 text-brand-cream">
+                <div className="space-y-2 text-brand-cream/90">
                   <div className="flex justify-between">
-                    <span>Tickets ({numTickets}) {paymentMethod === 'paystack' ? '(Paystack)' : '(Bank transfer)'}</span>
+                    <span>Bank Transfer Tickets ({numTickets})</span>
                     <span>NGN {baseAmount.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between pt-3 border-t border-brand-cream/40 text-brand-cream font-bold text-lg">
@@ -692,14 +533,13 @@ Details: ${
                     <span className="text-brand-cream">NGN {totalAmount.toLocaleString()}</span>
                   </div>
                   <div className="text-xs text-brand-cream/70 text-center mt-2">
-                    Paystack tickets: NGN {PAYSTACK_PRICE.toLocaleString()} each (card processing included). Bank transfer tickets: NGN {BANK_TRANSFER_PRICE.toLocaleString()} each. All prices include processing fees.
+                    All prices include processing fees. Bank transfer: NGN {TICKET_PRICE.toLocaleString()} per guest.
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
           <div className="flex gap-4 mt-8">
             {step === 2 && (
               <button
@@ -713,7 +553,7 @@ Details: ${
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-lg hover:bg-brand-cream transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-3 bg-brand-cream text-brand-maroon font-semibold rounded-lg hover:bg-brand-cream/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
